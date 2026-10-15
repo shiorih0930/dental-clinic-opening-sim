@@ -772,7 +772,7 @@ function makeSched(){
 /* サービスの内容は、academy.doctorbook.jp で確認できた範囲です。受講料や月額、効果の大きさは、ゲーム内の仮の設定です。 */
 var VIDS=[{id:5833,t:'採用はゴールじゃない！人材育成・組織づくり、採用・育成・定着のコツ',w:'平 早由加',pl:'プレミアム',th:'staff'},{id:5839,t:'これだけは知っておきたい初めての開業の戦略',w:'津島 克哉',pl:'プレミアム',th:'money'},{id:5814,t:'患者さんも、医療者も惹きつける「マグネットクリニック」｜池ノ台ゆかり歯科',w:'熱田 悠佳里',pl:'無料',th:'rep'},{id:5806,t:'ZOOワンオペが変えた歯科医院 -人が活きる環境へ-',w:'英保 裕和',pl:'無料',th:'staff'},{id:4208,t:'データを元に解説！歯科医師が生涯かかるお金のハナシ',w:'中山 尭盛',pl:'プレミアム',th:'money'},{id:5759,t:'持続可能な教育の仕組み化！',w:'Doctorbook編集部',pl:'無料',th:'staff'},{id:5355,t:'臨床と経営の両立メソッド 成長するクリニックが実践するマネジメントの秘訣',w:'千賀 誓人・矢野 孝星',pl:'プレミアム',th:'money'},{id:5522,t:'TCは最強のキャリアパスポート 〜歯科スタッフの新しい働き方〜',w:'鈴木 誓子',pl:'プレミアム',th:'unit'},{id:5431,t:'歯科医院のための初めての生成AI活用術',w:'伊佐津 貴之・渡部 準也',pl:'プレミアム',th:'ops'},{id:4988,t:'地方でも自費率50％!! ”鉄板のしくみ”初診コンサルで自費率・メンテを増やす!!',w:'元島 道信',pl:'プレミアム',th:'unit'},{id:5084,t:'採用の鍵！人材にかかる様々なコスト',w:'津島 克哉・青野 茉莉恵',pl:'みんなプレミアム限定',th:'staff'},{id:5137,t:'歯科医師の本音にプロが答える！デジタル時代の集患対策',w:'櫻井 祐弥・植松 芳宏',pl:'無料',th:'rep'},{id:5927,t:'費用対効果を最大化！唯一無二の「マーケティング発想のクリニック空間設計」',w:'',pl:'無料',th:'rep'},{id:0,u:'https://pr-contents.doctorbook.jp/tsukiichi_kansyaday',t:'クリンチェック Tetori Ashitori 第1期〜第4期 まとめ購入',w:'岡野 修一郎',pl:'有料セット（月イチ感謝デー対象）',th:'unit',fee:6,camp:1},{id:0,u:'https://academy.doctorbook.jp/features/243',t:'月星太介先生に学ぶ 外傷歯と自家歯牙移植セット',w:'月星 太介',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:4,camp:1},{id:0,u:'https://pr-contents.doctorbook.jp/syoureihyapponnokku_special',t:'症例 100本ノックシリーズ丨全17回＋特別講演',w:'土屋 賢司',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:8,camp:1},{id:0,u:'https://academy.doctorbook.jp/contents/5262',t:'K2オンラインコース 〜伝説の歯科技工士 桑田正博先生の教えを臨床に活かす〜 全5回',w:'北原 信也ほか',pl:'有料セット（月イチ感謝デー対象）',th:'unit',fee:6,camp:1},{id:0,u:'https://academy.doctorbook.jp/contents/5527',t:'ズバリ、ここから始めたい！下顎埋伏智歯抜歯のアドバンスドベーシックハンズオンコース',w:'新名主 耕平・山崎 新太郎',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:6,camp:1},{id:0,u:'https://pr-contents.doctorbook.jp/rinsyousikawokatarukai-43',t:'臨床歯科を語る会 第43回 全45動画視聴プラン',w:'',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:5,camp:1},{id:0,u:'https://pr-contents.doctorbook.jp/rinsyousikawokatarukai-44',t:'臨床歯科を語る会 第44回 全53動画視聴プラン',w:'',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:5,camp:1},{id:5883,t:'クリンチェック Tetori Ashitori 第4期',w:'岡野 修一郎',pl:'有料（22,000円〜）',th:'unit',fee:2},{id:5547,t:'チームで取り組む！感染対策マネジメント 超Basic',w:'佐野 喬祐',pl:'プレミアム',th:'ops'}];
 function genLearn(force){
-  var all=['digi','minpre','shelf','hands','kira'], left=all.filter(function(k){return (S.learned||[]).indexOf(k)<0});
+  var all=['digi','scope','minpre','shelf','hands','kira'], left=all.filter(function(k){return (S.learned||[]).indexOf(k)<0});
   if(!left.length){S.learned=[];left=all}
   var k=force||pickA(left); if(!force) S.learned=(S.learned||[]).concat([k]);
   var cat=pickA(['歯内療法','歯周治療','予防歯科','小児歯科','咬合機能','デジタル・歯科技工','インプラント']);
@@ -795,9 +795,13 @@ function genLearn(force){
     {t:'導入して、MFTに来る患者さんに案内する（月額の仮設定 約1万円）',s:'費用はかかりますが、継続率が上がり、衛生士の負担も軽くなる見込みです。',fx:function(){S.other=Math.round((S.other+1)*10)/10;apply({funds:-3,rec:3,staff:3,rep:1});return 'キラモンアドベンチャーを導入し、MFTに通う子どもたちに案内しました。家でも続けてくれる子が増え、衛生士の説明の手間も減りそうです。'}},
     {t:'まず1〜2人の患者さんで試す',s:'小さく始めて、効果を確かめます。',fx:function(){apply({rec:1,staff:2});return '数人の患者さんで試しました。保護者から「子どもが自分から練習する」と声が上がりました。本格導入は、様子を見て決めます。'}},
     {t:'今は、今までのやり方を続ける',s:'費用はかかりませんが、継続の悩みは残ります。',fx:function(){apply({staff:-1});return '今回は見送りました。練習が続かない悩みは、そのままです。'}}]};
-  if(k==='digi') return {kind:'学び',title:'デジトーク・SCOPEをオンラインで視聴',body:'デジタル歯科を扱う「デジトーク」と、臨床を学ぶ動画シリーズ「SCOPE」の配信があります。無料の回もあり、オンラインで視聴できます。',link:{t:'Doctorbook academy（動画・LIVE）',u:'https://academy.doctorbook.jp/contents'},opts:[
+  if(k==='digi') return {kind:'学び',title:'デジトークをオンラインで視聴',body:'デジタル歯科を扱う配信「デジトーク」があります。無料の回もあり、オンラインで視聴できます。',link:{t:'Doctorbook academy（動画・LIVE）',u:'https://academy.doctorbook.jp/contents'},opts:[
     {t:'スタッフも一緒に、昼休みに視聴する',s:'みんなで同じ話を聞くと、院内の共通言語が増えます。',fx:function(){apply({staff:4,rep:1,fat:1});return 'スタッフと一緒に視聴しました。「あの症例、うちでも見逃していないかな」と、午後にみんなで話し合いました。'}},
     {t:'自分だけ、あとでアーカイブを見る',s:'時間は自分で選べます。',fx:function(){apply({rep:1,fat:1});return '夜にアーカイブで見ました。'+(S.prof.eq.ios?'口腔内スキャナーの活かし方に、新しい発見がありました。':'口腔内スキャナーやCTの導入を、少し前向きに考え始めました。')}},
+    {t:'今回は見送る',s:'診療と予約を優先します。',fx:function(){return '今回は見送りました。'}}]};
+  if(k==='scope') return {kind:'学び',title:'SCOPEをオンラインで視聴',body:'臨床を学ぶ動画シリーズ「SCOPE」の配信があります。無料の回もあり、オンラインで視聴できます。',link:{t:'Doctorbook academy（動画・LIVE）',u:'https://academy.doctorbook.jp/contents'},opts:[
+    {t:'スタッフも一緒に、昼休みに視聴する',s:'みんなで同じ話を聞くと、院内の共通言語が増えます。',fx:function(){apply({staff:4,rep:1,fat:1});return 'スタッフと一緒に視聴しました。「この症例、うちならどう診るかな」と、午後にみんなで話し合いました。'}},
+    {t:'自分だけ、あとでアーカイブを見る',s:'時間は自分で選べます。',fx:function(){apply({rep:1,fat:1});return '夜にアーカイブで見ました。明日からの臨床で試したいことが、いくつか見つかりました。'}},
     {t:'今回は見送る',s:'診療と予約を優先します。',fx:function(){return '今回は見送りました。'}}]};
   if(k==='minpre') return {kind:'学び',title:'スタッフに、動画で学んでもらう',body:'歯科衛生士や歯科助手が、動画で学べる仕組み「みんなプレミアム」があります。たとえば「採用の鍵！人材にかかる様々なコスト」「アシスタントワーク 〜私たちは医療従事者〜」「自分の強みを把握しよう-歯科衛生士をもっと楽しもう！」といった動画で、院内の学びを揃えられます。',link:{t:'みんなプレミアム',u:'https://minna-premium.doctorbook.jp'},opts:[
     {t:'全員で登録し、勤務時間内に見る時間をつくる',s:'月々の費用が少し増えますが、スタッフの学びが仕事になります。',fx:function(){S.other=Math.round((S.other+1)*10)/10;apply({funds:-1,staff:6,rep:1});return '全員で登録し、週に1回、30分の学びの時間をつくりました。患者さんへの説明が、少しずつ揃ってきました。'}},
@@ -959,6 +963,7 @@ function viewClaimIntro(){
 /* ---------- ルーレット ---------- */
 function startRoulette(){
   if(RIV){clearInterval(RIV);RIV=null}
+  S.rollDone=false; S.rollUrl=undefined;
   var p=S.prof;
   var fin=[p.form.n, fmoney(p.savings)+'万円', p.loc.n, p.id.name+'（'+p.age+'歳）'];
   var pool=[
@@ -975,14 +980,16 @@ function startRoulette(){
       if(el>=stops[i]){box.textContent=fin[i];box.className='reel done'}
       else{box.textContent=pool[i]();box.className='reel'}
     }
-    if(el>=4400){clearInterval(RIV);RIV=null; if(S.phase==='roll'){S.phase='profile';render()}}
+    if(el>=4400){clearInterval(RIV);RIV=null; if(S.phase==='roll'){S.rollDone=true;render()}}
   },80);
 }
 function viewRoll(){
-  var lab=['開業の形','自己資金','立地','院長'];
-  return '<div class="card"><p class="eyebrow">抽選中</p><h2>あなたの条件を決めています</h2><p class="lead">開業の形、貯金、場所、そして院長は、選べません。</p><div class="reels">'+
-  lab.map(function(l,i){return '<div class="reelbox"><span>'+l+'</span><div class="reel" id="r'+i+'">　</div></div>'}).join('')+
-  '</div><div class="row"><button class="btn ghost" data-act="rollskip">結果を先に見る</button></div></div>';
+  var lab=['開業の形','自己資金','立地','院長'], p=S.prof;
+  var fin=[p.form.n, fmoney(p.savings)+'万円', p.loc.n, p.id.name+'（'+p.age+'歳）'];
+  var done=!!S.rollDone;
+  return '<div class="card"><p class="eyebrow">'+(done?'抽選結果':'抽選中')+'</p><h2>'+(done?'あなたの条件が決まりました':'あなたの条件を決めています')+'</h2><p class="lead">開業の形、貯金、場所、そして院長は、選べません。</p><div class="reels">'+
+  lab.map(function(l,i){return '<div class="reelbox"><span>'+l+'</span><div class="reel'+(done?' done':'')+'" id="r'+i+'">'+(done?esc(fin[i]):'　')+'</div></div>'}).join('')+
+  '</div>'+(done?'<div class="row"><button class="btn" data-act="rollskip">条件の詳細を見る</button><button class="btn ghost" data-act="rollshare">この画面を画像にする</button></div>'+rollCardHtml():'<div class="row"><button class="btn ghost" data-act="rollskip">結果を先に見る</button></div>')+'</div>';
 }
 function distHtml(){
   var T=S.prof.team, mine=Math.min(T.dh,3);
@@ -1090,6 +1097,99 @@ function makeCard(){
     var im=new Image(); im.onload=function(){draw(im)}; im.onerror=function(){draw(null)};
     im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(portraitSvg(P.id.look).replace('<svg ','<svg width="240" height="240" '));
   });
+}
+function makeProfileCard(){
+  return new Promise(function(resolve){
+    var W=1080,H=1350,c=document.createElement('canvas'); c.width=W; c.height=H;
+    var x=c.getContext('2d'), P=S.prof;
+    var serif='"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif', sans='"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif';
+    var BG='#E9EFEE',INK='#14262B',GRAY='#6B7F84',TEAL='#0C7A78',HEAD='#0C5E5C';
+    var fit=function(t,max,font,size){var s=size;do{x.font=font.replace('@',s);s-=2}while(x.measureText(t).width>max&&s>20);return};
+    var draw=function(img){
+      x.fillStyle=BG;x.fillRect(0,0,W,H);
+      x.fillStyle=HEAD;x.fillRect(0,0,W,112);
+      x.fillStyle='#fff';x.textBaseline='alphabetic';x.font='700 44px '+serif;x.fillText('歯科医院開業シミュレーション',64,72);
+      x.fillStyle=TEAL;x.font='500 28px '+sans;x.fillText('抽選結果 · 私の開業条件',64,160);x.fillStyle=GRAY;x.font='400 22px '+sans;x.textAlign='right';x.fillText('年間1,363件の開設のうちの1件',W-64,160);x.textAlign='left';
+      if(img){x.save();x.beginPath();x.rect(64,200,210,210);x.clip();x.drawImage(img,64,200,210,210);x.restore()}
+      x.strokeStyle='#C4D2D0';x.lineWidth=2;x.strokeRect(64,200,210,210);
+      x.fillStyle=TEAL;x.font='500 28px '+sans;x.fillText(P.form.n+' · '+P.loc.n,300,232);
+      x.fillStyle=INK;fit(P.id.clinic,720,'700 @px '+serif,72);x.fillText(P.id.clinic,300,318);
+      x.fillStyle=GRAY;x.font='400 28px '+sans;x.fillText('院長　'+P.id.name+'（'+P.age+'歳・勤務医歴'+P.yrs+'年）',300,370);
+      x.font='400 24px '+sans;x.fillText(P.id.place,300,410);
+      var T=P.team, eqs=[]; if(P.eq.ct)eqs.push('CT'); if(P.eq.ios)eqs.push('口腔内スキャナー'); if(P.eq.mic)eqs.push('マイクロスコープ'); if(!eqs.length)eqs.push('基本機器のみ');
+      var fixed=S.stf+S.rent+S.other;
+      var facts=[['自己資金','約'+fmoney(P.savings)+'万円'],['借入（月々の返済 '+P.ds+'万円）','約'+fmoney(P.debt)+'万円'],['手元の運転資金','約'+fmoney(P.funds)+'万円'],['毎月の固定費','約'+fmoney(fixed)+'万円'],['診療チェア',T.chairs+'台'],['スタッフ','歯科医師'+(T.dds+T.assocp)+'・衛生士'+(T.dh+T.dhp)+'・助手'+T.as],['患者さん','再診'+S.recur+'人＋新患'+S.newp+'人/月'],['Googleレビュー','★'+avg().toFixed(1)+'（'+S.rn+'件）']];
+      facts.forEach(function(f,i){var cx=64+(i%2)*500, cy=490+Math.floor(i/2)*112;
+        x.fillStyle=GRAY;x.font='400 22px '+sans;x.fillText(f[0],cx,cy);
+        x.fillStyle=INK;fit(f[1],460,'700 @px '+sans,34);x.fillText(f[1],cx,cy+46)});
+      x.fillStyle=GRAY;x.font='400 22px '+sans;x.fillText('機器',64,960);
+      x.fillStyle=INK;fit(eqs.join('・'),950,'700 @px '+sans,34);x.fillText(eqs.join('・'),64,1006);
+      var st=P.story||P.id.story||''; x.fillStyle='#4A6168';x.font='400 24px '+sans;
+      var line='',y=1068,i2;
+      for(i2=0;i2<st.length;i2++){line+=st[i2]; if(x.measureText(line).width>940){x.fillText(line,64,y);line='';y+=38; if(y>1200)break}}
+      if(line&&y<=1200)x.fillText(line,64,y);
+      x.strokeStyle='#C4D2D0';x.lineWidth=2;x.beginPath();x.moveTo(64,1292);x.lineTo(W-64,1292);x.stroke();
+      x.fillStyle=INK;x.font='700 30px '+sans;x.fillText('この条件で、3か月。あなたなら？',64,1330);
+      var lg=new Image(); lg.onload=function(){var lw=190,lh=Math.round(lw*lg.height/lg.width); x.fillStyle='#fff'; x.fillRect(W-64-lw-14,1297,lw+14,lh+10); x.drawImage(lg,W-64-lw-7,1302,lw,lh); resolve(c.toDataURL('image/png'))}; lg.onerror=function(){resolve(c.toDataURL('image/png'))};
+      var lu2=logoUrl(); if(lu2) lg.src=lu2; else resolve(c.toDataURL('image/png'));
+    };
+    var im=new Image(); im.onload=function(){draw(im)}; im.onerror=function(){draw(null)};
+    im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(portraitSvg(P.id.look).replace('<svg ','<svg width="240" height="240" '));
+  });
+}
+function makeRollCard(){
+  return new Promise(function(resolve){
+    var W=1080,H=1080,c=document.createElement('canvas'); c.width=W; c.height=H;
+    var x=c.getContext('2d'), P=S.prof;
+    var serif='"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif', sans='"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif';
+    var BG='#E9EFEE',INK='#14262B',GRAY='#6B7F84',TEAL='#0C7A78',HEAD='#0C5E5C';
+    var fit=function(t,max,font,size){var s=size;do{x.font=font.replace('@',s);s-=2}while(x.measureText(t).width>max&&s>20);return};
+    var draw=function(img){
+      x.fillStyle=BG;x.fillRect(0,0,W,H);
+      x.fillStyle=HEAD;x.fillRect(0,0,W,112);
+      x.fillStyle='#fff';x.textBaseline='alphabetic';x.font='700 44px '+serif;x.fillText('歯科医院開業シミュレーション',64,72);
+      x.fillStyle=TEAL;x.font='500 30px '+sans;x.fillText('抽選結果',64,170);x.fillStyle=GRAY;x.font='400 22px '+sans;x.textAlign='right';x.fillText('開業の形・貯金・場所・院長は、選べません',W-64,170);x.textAlign='left';
+      var labs=['開業の形','自己資金','立地','院長'], vals=[P.form.n, fmoney(P.savings)+'万円', P.loc.n, P.id.name+'（'+P.age+'歳）'];
+      vals.forEach(function(v,i){
+        var bx=64+(i%2)*500, by=210+Math.floor(i/2)*190, bw=452, bh=150;
+        x.fillStyle='#F8FAF9';x.fillRect(bx,by,bw,bh);x.strokeStyle=TEAL;x.lineWidth=4;x.strokeRect(bx,by,bw,bh);
+        x.fillStyle=GRAY;x.font='400 24px '+sans;x.fillText(labs[i],bx+24,by+44);
+        x.fillStyle=HEAD;fit(v,bw-48,'700 @px '+serif,44);x.fillText(v,bx+24,by+106);
+      });
+      if(img){x.save();x.beginPath();x.rect(64,610,260,260);x.clip();x.drawImage(img,64,610,260,260);x.restore()}
+      x.strokeStyle='#C4D2D0';x.lineWidth=2;x.strokeRect(64,610,260,260);
+      x.fillStyle=INK;fit(P.id.clinic,660,'700 @px '+serif,64);x.fillText(P.id.clinic,356,690);
+      x.fillStyle=GRAY;x.font='400 28px '+sans;x.fillText('院長　'+P.id.name+'（'+P.age+'歳）',356,745);
+      x.font='400 24px '+sans;x.fillText(P.id.place,356,790);
+      x.fillStyle='#4A6168';x.fillText('年間1,363件の開設のうちの1件',356,850);
+      x.strokeStyle='#C4D2D0';x.lineWidth=2;x.beginPath();x.moveTo(64,1022);x.lineTo(W-64,1022);x.stroke();
+      x.fillStyle=INK;x.font='700 30px '+sans;x.fillText('あなたは、どんな条件になる？',64,1060);
+      var lg=new Image(); lg.onload=function(){var lw=170,lh=Math.round(lw*lg.height/lg.width); x.fillStyle='#fff'; x.fillRect(W-64-lw-14,1025,lw+14,lh+8); x.drawImage(lg,W-64-lw-7,1029,lw,lh); resolve(c.toDataURL('image/png'))}; lg.onerror=function(){resolve(c.toDataURL('image/png'))};
+      var lu2=logoUrl(); if(lu2) lg.src=lu2; else resolve(c.toDataURL('image/png'));
+    };
+    var im=new Image(); im.onload=function(){draw(im)}; im.onerror=function(){draw(null)};
+    im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(portraitSvg(P.id.look).replace('<svg ','<svg width="260" height="260" '));
+  });
+}
+function buildRollCard(){
+  S.rollUrl=null;
+  try{ makeRollCard().then(function(u){S.rollUrl=u; if(S.phase==='roll') render()}).catch(function(){S.rollUrl='';if(S.phase==='roll')render()}) }catch(e){}
+}
+function rollCardHtml(){
+  if(S.rollUrl===undefined) return '';
+  if(S.rollUrl===null) return '<p class="note">画像を作っています…</p>';
+  if(S.rollUrl==='') return '<p class="note">画像を作れませんでした。</p>';
+  return '<img class="cardimg" src="'+S.rollUrl+'" alt="抽選結果の画像"><div class="row"><button class="btn" data-act="saveroll">画像を保存</button><button class="btn ghost" data-act="shareroll">共有する</button></div><p class="note" id="sharemsg">保存できない場合は、画像を長押し（右クリック）して保存してください。</p>';
+}
+function buildProfCard(){
+  S.proUrl=null;
+  try{ makeProfileCard().then(function(u){S.proUrl=u; if(S.phase==='profile') render()}).catch(function(){S.proUrl='';if(S.phase==='profile')render()}) }catch(e){}
+}
+function profCardHtml(){
+  if(S.proUrl===undefined) return '';
+  if(S.proUrl===null) return '<p class="note">画像を作っています…</p>';
+  if(S.proUrl==='') return '<p class="note">画像を作れませんでした。</p>';
+  return '<h3>共有用の画像</h3><img class="cardimg" src="'+S.proUrl+'" alt="開業条件の画像"><div class="row"><button class="btn" data-act="saveprof">画像を保存</button><button class="btn ghost" data-act="shareprof">共有する</button></div><p class="note" id="sharemsg">保存できない場合は、画像を長押し（右クリック）して保存してください。</p>';
 }
 function buildCard(){
   S.cardUrl=null;
@@ -1411,6 +1511,7 @@ function viewProfile(){
 
   '<div class="brief"><dl><dt>患者さん</dt><dd>再診 '+S.recur+'人 ＋ 新患 '+S.newp+'人/月</dd><dt>Googleレビュー</dt><dd>★'+avg().toFixed(1)+'（'+S.rn+'件）</dd><dt>スタッフ満足度</dt><dd>'+S.staff+'</dd><dt>院長の消耗度</dt><dd>'+S.fat+'</dd>'+(S.quota?'<dt>本部の目標</dt><dd>新患 '+S.quota+'人/月</dd>':'')+'</dl></div>'+
   '<div class="row"><button class="btn" data-act="begin">この条件で開院する</button><button class="btn ghost" data-act="reroll">引き直す</button></div>'+
+  '<div class="row"><button class="btn ghost" data-act="procard">この条件を画像にする</button></div>'+profCardHtml()+
   '<details class="refs"><summary>参考にした実際の状況</summary><ul>'+REFS.map(function(r){return '<li>'+esc(r[0])+'（<a href="'+r[2]+'" target="_blank" rel="noopener">'+esc(r[1])+'</a>）</li>'}).join('')+'</ul><p>数字の一部は目安や古い統計です。ゲームの条件は、これを参考にした設定で、実在の医院を表すものではありません。</p></details></div>';
   return h;
 }
@@ -1620,7 +1721,9 @@ document.addEventListener('click',function(ev){
     S.csvList=(S.mode==='csv')?pickCsv():[];
     rollProfile(); S.phase='roll'; render(); startRoulette(); return;
   }
-  else if(a==='reroll'){rollProfile(); S.phase='roll'; render(); startRoulette(); return}
+  else if(a==='rollshare'){buildRollCard(); render(); return}
+  else if(a==='procard'){buildProfCard(); render(); return}
+  else if(a==='reroll'){S.proUrl=undefined; S.rollUrl=undefined; rollProfile(); S.phase='roll'; render(); startRoulette(); return}
   else if(a==='rollskip'){if(RIV){clearInterval(RIV);RIV=null} S.phase='profile'}
   else if(a==='begin'){buildRoster();S.day=0;S.m=1;newMonth()}
   else if(a==='pause'){S.paused=!S.paused; if(!S.paused) resumeClock()}
@@ -1705,11 +1808,11 @@ document.addEventListener('click',function(ev){
       if(S.pat!==p0) S.d.pat=S.pat-p0;
     } else {S.phase='final'; S.d={}}
   }
-  else if(a==='savecard'||a==='sharecard'){
-    var msg=$('#sharemsg'), url=S.cardUrl; if(!url) return;
+  else if(a==='savecard'||a==='sharecard'||a==='saveprof'||a==='shareprof'||a==='saveroll'||a==='shareroll'){
+    var isR=(a==='saveroll'||a==='shareroll'), isP=(a==='saveprof'||a==='shareprof'||isR); a=a.replace('prof','card').replace('roll','card'); var msg=$('#sharemsg'), url=isR?S.rollUrl:(isP?S.proUrl:S.cardUrl); if(!url) return;
     var say=function(t){var el=$('#sharemsg'); if(el) el.textContent=t};
     var bl; try{bl=dataUrlToBlob(url)}catch(e6){say('画像の用意に失敗しました。画像を長押し（右クリック）して保存してください。'); return}
-    var fname='clinic-month'+S.m+'.png';
+    var fname=isR?'clinic-draw.png':isP?'clinic-conditions.png':'clinic-month'+S.m+'.png';
     var doSave=function(){
       if(!DL){say('この画面では保存機能が使えません。画像を長押し（右クリック）して保存してください。'); return Promise.resolve()}
       return DL.save({filename:fname,data:bl}).then(function(){say('保存しました。')}).catch(function(e){say((e&&e.code==='declined')?'保存をやめました。':'保存できませんでした（'+((e&&e.code)||'error')+'）。画像を長押し（右クリック）して保存してください。')});
@@ -1717,7 +1820,7 @@ document.addEventListener('click',function(ev){
     if(a==='savecard'){doSave(); return}
     var f; try{f=new File([bl],fname,{type:'image/png'})}catch(e7){f=null}
     if(f&&navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){
-      navigator.share({files:[f],title:'歯科医院開業シミュレーション',text:'院の記録 '+S.m+'か月目'}).then(function(){say('共有しました。')}).catch(function(e){ if(e&&e.name==='AbortError'){say('共有をやめました。')} else {say('共有に対応していないため、保存に切り替えます。'); doSave()} });
+      navigator.share({files:[f],title:'歯科医院開業シミュレーション',text:isR?'抽選結果':isP?'私の開業条件':'院の記録 '+S.m+'か月目'}).then(function(){say('共有しました。')}).catch(function(e){ if(e&&e.name==='AbortError'){say('共有をやめました。')} else {say('共有に対応していないため、保存に切り替えます。'); doSave()} });
     } else { say('この画面では共有メニューが使えないため、保存に切り替えます。'); doSave() }
     return;
   }
