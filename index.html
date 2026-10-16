@@ -626,11 +626,11 @@ function evQuit(p){
       p.st='退職';S.stf=Math.max(0,S.stf-sal0);S.capPen+=cap;apply({staff:-5,fat:4});return '引き止めましたが、'+p.n+'さんの意思は変わらず、退職が決まりました。'}},
    {t:'受け入れて、求人を出す（募集費・紹介料 約'+rc+'万円）',s:'新人が慣れるまで、しばらく時間がかかります。',fx:function(){
       p.st='退職';S.stf=Math.max(0,S.stf-sal0);S.capPen+=cap;S.tmpPen+=cap*0.5;S.hire=(S.hire||[]);S.hire.push({role:p.role,sal0:sal0,cap:cap,at:S.m+1});apply({funds:-rc,fat:2});return p.n+'さんの退職を受け入れ、求人を出しました。来月には新しい人が入る見込みです。'}},
-   {t:'Clinicbookに掲載し、マグネットクリニックで医院の魅力を発信して募集する（約'+Math.round(rc*1.2)+'万円）',s:'「同業者評価のある医院」としての掲載や、院内見学の動画で、働きたい人に医院を知ってもらいます。掲載には、医院の評判が問われます。',fx:function(){
+   {t:'マグネットクリニックで医院の魅力を発信して募集する（約'+Math.round(rc*1.2)+'万円）',s:'院内見学の動画や写真で、働きたい人に医院の魅力を知ってもらいます。反応は、医院の評判によって変わります。',fx:function(){
       p.st='退職';S.stf=Math.max(0,S.stf-sal0);S.capPen+=cap;S.tmpPen+=cap*0.5;S.hire=(S.hire||[]);S.hire.push({role:p.role,sal0:sal0,cap:cap,at:S.m+1});
       var okp=S.rep>=55;
-      if(okp){apply({funds:-Math.round(rc*1.2),staff:2,rep:1,fat:2});return p.n+'さんの退職を受け入れ、Clinicbookに掲載して、院内見学の動画も公開しました。「この医院で働きたい」という応募が複数あり、来月には新しい人が入る見込みです。'}
-      apply({funds:-Math.round(rc*1.2),staff:1,fat:2});return p.n+'さんの退職を受け入れ、Clinicbookへの掲載と見学動画の公開を進めました。評判がまだ十分ではなく、反応は控えめでした。それでも、来月には新しい人が入る見込みです。'}},
+      if(okp){apply({funds:-Math.round(rc*1.2),staff:2,rep:1,fat:2});return p.n+'さんの退職を受け入れ、マグネットクリニックで院内見学の動画を公開しました。「この医院で働きたい」という応募が複数あり、来月には新しい人が入る見込みです。'}
+      apply({funds:-Math.round(rc*1.2),staff:1,fat:2});return p.n+'さんの退職を受け入れ、マグネットクリニックでの見学動画の公開を進めました。評判がまだ十分ではなく、反応は控えめでした。それでも、来月には新しい人が入る見込みです。'}},
    {t:'条件を見直して残ってもらう',s:'給与を上げます。毎月の人件費が増えます。',fx:function(){S.stf=Math.round(S.stf+sal0*0.15);apply({staff:3,fat:1});return '給与を見直し、'+p.n+'さんは残ってくれることになりました。毎月の人件費は少し増えます。'}}]};
 }
 function evConf(a,b){
