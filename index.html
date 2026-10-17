@@ -757,14 +757,14 @@ var REST=[
 ];
 function dailyEvent(d){
   if(isSun(d)) return pickA(REST);
-  var list=DAILY.slice().sort(function(){return Math.random()-0.5});
+  var list=DAILY.concat(EXDAILY).sort(function(){return Math.random()-0.5});
   for(var i=0;i<list.length;i++){var r=list[i](); if(r) return r}
   return {tag:'院内',t:'いつもどおりの一日だった。'};
 }
 function makeSched(){
   var base=(S.m-1)*30, used={}, out=[];
   function put(type,lo,hi){for(var k=0;k<30;k++){var d=base+rnd(lo,hi); if(!used[d]&&!isSun(d)){used[d]=1;out.push({d:d,type:type});return}}}
-  put('claim',6,24); put('hr',3,27); if(Math.random()<0.75) put('eq',3,27); put('talk',2,28); put('talk',2,28); put('learn',4,26); put('acad',2,28); if(Math.random()<0.5) put('acad',2,28);
+  put('claim',6,24); put('hr',3,27); if(Math.random()<0.75) put('eq',3,27); put('talk',2,28); put('talk',2,28); put('misc',3,27); put('misc',3,27); put('learn',4,26); put('acad',2,28); if(Math.random()<0.5) put('acad',2,28);
   return out;
 }
 /* ---------- Doctorbook の学びと仕組み（動画・オンライン視聴・スタッフの学習・在庫管理・ハンズオン） ---------- */
@@ -850,6 +850,233 @@ function genEq(){
   return okEq.length?evEq(pickW(okEq,function(x){return EQC[x.k].w})):null;
 }
 function talk(p,line,opts,title){return {kind:'スタッフとの会話',talk:true,who:p,title:title||(p.n+'さんから声をかけられました'),body:line,opts:opts}}
+/* ---------- 追加の出来事（院内・経営・患者まわり）。効果の数字はゲーム内の仮設定です ---------- */
+function hasNew(){return S.roster.some(function(x){return x.st==="在籍"&&x.note==="新人"})}
+function staffN(){return S.roster.filter(function(x){return x.role!=="院長"&&x.st==="在籍"}).length}
+function exApply(fx,note){var r="";apply(fx);if(note){if(note.indexOf("人件費が増える")>=0)S.stf=Math.round((S.stf+1)*10)/10;if(note.indexOf("固定費が増える")>=0)S.other=Math.round((S.other+1)*10)/10;if(note.indexOf("固定費が下がる")>=0)S.other=Math.max(8,Math.round((S.other-1)*10)/10);if(note.indexOf("材料費率が下がる")>=0)S.matRate=Math.max(0.07,Math.round((S.matRate-0.004)*1000)/1000);if(note.indexOf("診療枠が減る")>=0)S.tmpPen+=0.02;if(note.indexOf("返済が増える")>=0){S.debt+=10;S.ds=Math.round((S.ds+0.2)*10)/10}if(note.indexOf("確率")>=0&&Math.random()<0.35){apply({staff:-2,fat:1});r=" ただ、思ったようには進みませんでした。"}}return r}
+var EXEV=[
+ {id:"新人の育成",ok:function(){return hasNew()},mk:function(){return {kind:"スタッフ",title:"新人が、なかなか仕事に慣れません",body:"先月入った新人が、器具の名前や手順をまだ覚えきれず、先輩の手が止まる場面が増えています。",opts:[{t:"先輩に教育担当をつけ、時間を決めて教える",s:"先輩の負担は増えますが、育ち方は安定します。",fx:function(){var x=exApply({staff:3,fat:2},"");return "決めました。先輩の負担は増えますが、育ち方は安定します。"+x}},
+  {t:"マニュアルを作って、各自で覚えてもらう",s:"手間は一度だけですが、新人は不安を感じることもあります。",fx:function(){var x=exApply({funds:-2,staff:1,fat:2},"");return "決めました。手間は一度だけですが、新人は不安を感じることもあります。"+x}},
+  {t:"現場で見て覚えてもらう",s:"費用はかかりませんが、ミスが増えるかもしれません。",fx:function(){var x=exApply({staff:-3,rep:-1},"");return "決めました。費用はかかりませんが、ミスが増えるかもしれません。"+x}}]}}},
+ {id:"求人への応募",ok:function(){return (S.hire&&S.hire.length>0)},mk:function(){return {kind:"スタッフ",title:"求人に応募がありました",body:"求人を見た経験者から、見学の申し込みがありました。条件は、希望より少し高めです。",opts:[{t:"見学の後、希望の条件で採用する",s:"人件費は上がりますが、即戦力です。",fx:function(){var x=exApply({funds:-1,staff:2},"毎月の人件費が増える");return "決めました。人件費は上がりますが、即戦力です。"+x}},
+  {t:"条件を話し合い、少し下げてもらう",s:"相手の気持ち次第で、辞退されることもあります。",fx:function(){var x=exApply({fat:1},"結果は確率で変わる");return "決めました。相手の気持ち次第で、辞退されることもあります。"+x}},
+  {t:"見送り、ほかの応募を待つ",s:"人手不足は続きます。",fx:function(){var x=exApply({staff:-2,fat:2},"");return "決めました。人手不足は続きます。"+x}}]}}},
+ {id:"資格取得の希望",ok:function(){return !!pickStaff(['歯科衛生士','歯科助手'])},mk:function(){return {kind:"スタッフ",title:"スタッフが、資格の勉強を始めたいと言っています",body:"「認定資格の講習を受けたい」と相談されました。費用と、勉強の時間が必要です。",opts:[{t:"費用を医院で出し、勉強の時間も認める",s:"医院の力になり、本人の自信にもなります。",fx:function(){var x=exApply({funds:-6,staff:6,rep:1},"");return "決めました。医院の力になり、本人の自信にもなります。"+x}},
+  {t:"費用は半分だけ出す",s:"本人の負担は残ります。",fx:function(){var x=exApply({funds:-3,staff:3},"");return "決めました。本人の負担は残ります。"+x}},
+  {t:"今は余裕がないと断る",s:"気持ちが離れるかもしれません。",fx:function(){var x=exApply({staff:-5},"");return "決めました。気持ちが離れるかもしれません。"+x}}]}}},
+ {id:"遅刻が続く",ok:function(){return !!pickStaff()},mk:function(){return {kind:"スタッフ",title:"遅刻が続いているスタッフがいます",body:"ここ1か月、朝の準備に間に合わないことが増えました。朝礼の質も落ちています。",opts:[{t:"事情を聞いて、勤務時間を相談する",s:"本音が聞けます。",fx:function(){var x=exApply({staff:3,fat:2},"");return "決めました。本音が聞けます。"+x}},
+  {t:"ルールを文書にして、全員に共有する",s:"公平ですが、空気が固くなります。",fx:function(){var x=exApply({staff:-2,fat:1},"");return "決めました。公平ですが、空気が固くなります。"+x}},
+  {t:"見て見ぬふりをする",s:"ほかのスタッフの不満がたまります。",fx:function(){var x=exApply({staff:-5,rep:-1},"");return "決めました。ほかのスタッフの不満がたまります。"+x}}]}}},
+ {id:"SNSの投稿",ok:function(){return !!pickStaff()},mk:function(){return {kind:"スタッフ",title:"スタッフの個人のSNS投稿が、気になります",body:"診療中の写真を投稿しているようです。患者さんが写り込んでいないか、心配です。",opts:[{t:"SNSのガイドラインを作り、全員で確認する",s:"手間はかかりますが、リスクが減ります。",fx:function(){var x=exApply({staff:1,fat:2,rep:1},"");return "決めました。手間はかかりますが、リスクが減ります。"+x}},
+  {t:"本人にだけ、個別に注意する",s:"角が立つかもしれません。",fx:function(){var x=exApply({staff:-2},"");return "決めました。角が立つかもしれません。"+x}},
+  {t:"何もしない",s:"問題が起きたら、大きくなるかもしれません。",fx:function(){var x=exApply({rep:-2},"結果は確率で変わる");return "決めました。問題が起きたら、大きくなるかもしれません。"+x}}]}}},
+ {id:"ハラスメントの相談",ok:function(){return !!pickStaff()},mk:function(){return {kind:"スタッフ",title:"スタッフから、職場での言動について相談がありました",body:"「ある人の言い方がきつくて、出勤するのがつらい」という相談です。",opts:[{t:"双方の話を聞き、第三者を入れて話し合う",s:"時間はかかりますが、公平です。",fx:function(){var x=exApply({funds:-3,staff:5,fat:4},"");return "決めました。時間はかかりますが、公平です。"+x}},
+  {t:"私から、本人に直接伝える",s:"早く動けますが、受け止め方は人によります。",fx:function(){var x=exApply({staff:1,fat:3},"");return "決めました。早く動けますが、受け止め方は人によります。"+x}},
+  {t:"様子を見る",s:"悪化するおそれがあります。",fx:function(){var x=exApply({staff:-8,rep:-1},"退職する場合あり");return "決めました。悪化するおそれがあります。"+x}}]}}},
+ {id:"集団での体調不良",ok:function(){return staffN()>=2},mk:function(){return {kind:"スタッフ",title:"インフルエンザで、複数のスタッフが休んでいます",body:"今週は、3人がまとめて休みました。予約はたくさん入っています。",opts:[{t:"予約を減らして、全員の回復を待つ",s:"収入は減りますが、感染は広げません。",fx:function(){var x=exApply({funds:-5,staff:3,fat:2},"");return "決めました。収入は減りますが、感染は広げません。"+x}},
+  {t:"院長が入り、予約は守る",s:"患者さんの影響は小さいですが、院長に負担がかかります。",fx:function(){var x=exApply({staff:1,fat:8},"");return "決めました。患者さんの影響は小さいですが、院長に負担がかかります。"+x}},
+  {t:"出られる人に無理をしてもらう",s:"予約は守れますが、不満が出ます。",fx:function(){var x=exApply({staff:-6,fat:3,rep:-1},"");return "決めました。予約は守れますが、不満が出ます。"+x}}]}}},
+ {id:"昇給の時期",ok:function(){return !!pickStaff()},mk:function(){return {kind:"スタッフ",title:"昇給の時期になりました",body:"スタッフの勤務が一年を迎えます。面談のタイミングです。",opts:[{t:"全員、少しずつ上げる",s:"人件費は上がりますが、全員の満足度が上がります。",fx:function(){var x=exApply({staff:5},"毎月の人件費が増える");return "決めました。人件費は上がりますが、全員の満足度が上がります。"+x}},
+  {t:"評価に応じて、差をつける",s:"納得感は出ますが、差を気にする人も出ます。",fx:function(){var x=exApply({staff:2,fat:3},"毎月の人件費が増える");return "決めました。納得感は出ますが、差を気にする人も出ます。"+x}},
+  {t:"今年は、据え置く",s:"費用は変わりませんが、不満が残ります。",fx:function(){var x=exApply({staff:-4},"");return "決めました。費用は変わりませんが、不満が残ります。"+x}}]}}},
+ {id:"勤務医の独立希望",ok:function(){return !!pickStaff(['勤務医'])},mk:function(){return {kind:"スタッフ",title:"勤務医が、いずれ独立したいと言っています",body:"「勉強のためにも、ここで数年働きたい」という話です。",opts:[{t:"応援し、独立までに学べる環境を作る",s:"関係が深まります。",fx:function(){var x=exApply({staff:4,fat:2,rep:1},"");return "決めました。関係が深まります。"+x}},
+  {t:"今は聞き流す",s:"変化はありません。",fx:function(){var x=exApply({staff:-1},"");return "決めました。変化はありません。"+x}},
+  {t:"契約を延長してもらうよう頼む",s:"将来の人手が安定します。条件を整える必要があります。",fx:function(){var x=exApply({funds:-2,staff:2},"毎月の人件費が増える");return "決めました。将来の人手が安定します。条件を整える必要があります。"+x}}]}}},
+ {id:"試用期間の判断",ok:function(){return hasNew()},mk:function(){return {kind:"スタッフ",title:"試用期間の終わりが近づいています",body:"新人の仕事ぶりは、ときどき光るものがありますが、ばらつきがあります。",opts:[{t:"本採用にして、育てていく",s:"先行きは長い目で見ます。",fx:function(){var x=exApply({staff:3,fat:1},"");return "決めました。先行きは長い目で見ます。"+x}},
+  {t:"試用期間を延ばす",s:"様子を見られますが、本人は不安になります。",fx:function(){var x=exApply({staff:-1},"");return "決めました。様子を見られますが、本人は不安になります。"+x}},
+  {t:"本採用を見送る",s:"求人からやり直しになります。",fx:function(){var x=exApply({funds:-3,staff:-3,fat:3},"");return "決めました。求人からやり直しになります。"+x}}]}}},
+ {id:"家賃の改定連絡",ok:function(){return true},mk:function(){return {kind:"経営",title:"家主から、家賃の見直しの連絡がありました",body:"来年から、家賃を数%上げたいという内容です。",opts:[{t:"受け入れる",s:"毎月の固定費が増えます。",fx:function(){var x=exApply({funds:-1},"毎月の固定費が増える");return "決めました。毎月の固定費が増えます。"+x}},
+  {t:"相場を調べて、交渉する",s:"手間はかかりますが、下げられるかもしれません。",fx:function(){var x=exApply({fat:2},"結果は確率で変わる");return "決めました。手間はかかりますが、下げられるかもしれません。"+x}},
+  {t:"更新を見送り、移転を考える",s:"大きな決断です。患者さんが減るおそれがあります。",fx:function(){var x=exApply({funds:-10,rep:-2,fat:4},"");return "決めました。大きな決断です。患者さんが減るおそれがあります。"+x}}]}}},
+ {id:"広告の営業",ok:function(){return true},mk:function(){return {kind:"経営",title:"ポータルサイトの広告営業が来ました",body:"「掲載すれば患者さんが増えます」と、料金表を渡されました。",opts:[{t:"3か月だけ、試しに載せる",s:"費用はかかりますが、新患の変化を確かめられます。",fx:function(){var x=exApply({funds:-6,pat:3},"");return "決めました。費用はかかりますが、新患の変化を確かめられます。"+x}},
+  {t:"費用をかけず、自院のホームページを整える",s:"時間はかかりますが、費用は抑えられます。",fx:function(){var x=exApply({fat:2,pat:1},"");return "決めました。時間はかかりますが、費用は抑えられます。"+x}},
+  {t:"断る",s:"今の集患を続けます。",fx:function(){var x=exApply({},"");return "決めました。今の集患を続けます。"+x}}]}}},
+ {id:"レセプトの返戻",ok:function(){return true},mk:function(){return {kind:"経営",title:"レセプトの返戻が、いくつか届きました",body:"記載の誤りで、請求が戻されてきました。修正して再提出が必要です。",opts:[{t:"スタッフと分担して、すぐ修正する",s:"手間はかかりますが、収入に響きません。",fx:function(){var x=exApply({staff:1,fat:3},"");return "決めました。手間はかかりますが、収入に響きません。"+x}},
+  {t:"専門のサービスに頼む（約5万円）",s:"手間は減ります。",fx:function(){var x=exApply({funds:-5,fat:1},"");return "決めました。手間は減ります。"+x}},
+  {t:"後回しにする",s:"収入が遅れ、翌月に響きます。",fx:function(){var x=exApply({funds:-4,fat:1},"");return "決めました。収入が遅れ、翌月に響きます。"+x}}]}}},
+ {id:"感染対策の確認",ok:function(){return true},mk:function(){return {kind:"経営",title:"保健所から、感染対策の確認の連絡がありました",body:"院内の滅菌と、手順の確認に来るそうです。",opts:[{t:"全員で手順を見直し、記録を整える",s:"手間はかかりますが、安心して迎えられます。",fx:function(){var x=exApply({staff:2,fat:3,rep:1},"");return "決めました。手間はかかりますが、安心して迎えられます。"+x}},
+  {t:"担当者を決めて、そこに任せる",s:"負担が偏ります。",fx:function(){var x=exApply({staff:-1,fat:1},"");return "決めました。負担が偏ります。"+x}},
+  {t:"いつもどおりで受ける",s:"不備を指摘されるかもしれません。",fx:function(){var x=exApply({rep:-2},"結果は確率で変わる");return "決めました。不備を指摘されるかもしれません。"+x}}]}}},
+ {id:"システムの障害",ok:function(){return true},mk:function(){return {kind:"経営",title:"電子カルテにつながらなくなりました",body:"午前中、画面が固まり、予約の確認ができません。",opts:[{t:"紙で対応し、復旧を待つ",s:"手間は増えますが、診療は続けられます。",fx:function(){var x=exApply({staff:-1,fat:3},"");return "決めました。手間は増えますが、診療は続けられます。"+x}},
+  {t:"保守のサポートに連絡する（約3万円）",s:"早めに復旧できます。",fx:function(){var x=exApply({funds:-3,fat:1},"");return "決めました。早めに復旧できます。"+x}},
+  {t:"午前の診療を止める",s:"患者さんが減ります。",fx:function(){var x=exApply({funds:-5,rep:-2},"");return "決めました。患者さんが減ります。"+x}}]}}},
+ {id:"台風の対応",ok:function(){return true},mk:function(){return {kind:"経営",title:"台風が近づいています",body:"夕方から風雨が強くなる予報です。午後の予約が心配です。",opts:[{t:"午後を休診にして、患者さんに連絡する",s:"収入は減りますが、安全が守れます。",fx:function(){var x=exApply({funds:-3,staff:2,rep:1},"");return "決めました。収入は減りますが、安全が守れます。"+x}},
+  {t:"通常どおり診療する",s:"来られない人のキャンセルが出ます。",fx:function(){var x=exApply({funds:-2,fat:2},"");return "決めました。来られない人のキャンセルが出ます。"+x}},
+  {t:"患者さんに選んでもらう",s:"対応は手間ですが、信頼されます。",fx:function(){var x=exApply({funds:-1,rep:1,fat:2},"");return "決めました。対応は手間ですが、信頼されます。"+x}}]}}},
+ {id:"予約システムの提案",ok:function(){return true},mk:function(){return {kind:"経営",title:"予約システムの導入を提案されました",body:"オンライン予約と、自動の連絡機能が付くそうです。月額の費用がかかります。",opts:[{t:"導入する（月額の仮設定 約2万円）",s:"無断キャンセルが減り、受付の手間も減ります。",fx:function(){var x=exApply({funds:-2,pat:3,staff:2},"毎月の固定費が増える");return "決めました。無断キャンセルが減り、受付の手間も減ります。"+x}},
+  {t:"無料の範囲で、試す",s:"効果は小さめです。",fx:function(){var x=exApply({pat:1},"");return "決めました。効果は小さめです。"+x}},
+  {t:"今のやり方を続ける",s:"変化はありません。",fx:function(){var x=exApply({},"");return "決めました。変化はありません。"+x}}]}}},
+ {id:"税理士からの指摘",ok:function(){return true},mk:function(){return {kind:"経営",title:"税理士から、資金繰りの指摘を受けました",body:"「借入の返済と、固定費の比率が高めです」との話です。",opts:[{t:"固定費を見直す",s:"人件費や、その他の費用を点検します。",fx:function(){var x=exApply({staff:-2,fat:2},"毎月の固定費が下がる");return "決めました。人件費や、その他の費用を点検します。"+x}},
+  {t:"追加の融資を相談する",s:"余裕はできますが、返済は増えます。",fx:function(){var x=exApply({funds:10},"毎月の返済が増える");return "決めました。余裕はできますが、返済は増えます。"+x}},
+  {t:"今のまま続ける",s:"数字を見ながら、様子を見ます。",fx:function(){var x=exApply({fat:1},"");return "決めました。数字を見ながら、様子を見ます。"+x}}]}}},
+ {id:"近隣の新規開院",ok:function(){return true},mk:function(){return {kind:"経営",title:"近くに、新しい歯科医院が開院しました",body:"駅前に、最新の設備を売りにした医院ができました。",opts:[{t:"自院の強みを、ホームページで発信する",s:"費用は少しかかります。",fx:function(){var x=exApply({funds:-3,rep:1,pat:1},"");return "決めました。費用は少しかかります。"+x}},
+  {t:"患者さんとの関係を、さらに大事にする",s:"今までのやり方を深めます。",fx:function(){var x=exApply({staff:2,rec:2,fat:2},"");return "決めました。今までのやり方を深めます。"+x}},
+  {t:"気にしないことにする",s:"様子を見ます。",fx:function(){var x=exApply({pat:-2},"");return "決めました。様子を見ます。"+x}}]}}},
+ {id:"ホームページの改修",ok:function(){return true},mk:function(){return {kind:"経営",title:"ホームページを、作り直したいと思っています",body:"スマホでの見やすさが、気になっていました。",opts:[{t:"制作会社に頼む（約20万円）",s:"見栄えが整い、集患にも効果があります。",fx:function(){var x=exApply({funds:-20,pat:4,rep:1},"");return "決めました。見栄えが整い、集患にも効果があります。"+x}},
+  {t:"自分たちで、少しずつ直す",s:"費用は抑えられますが、時間がかかります。",fx:function(){var x=exApply({funds:-2,fat:3,pat:1},"");return "決めました。費用は抑えられますが、時間がかかります。"+x}},
+  {t:"今のままにする",s:"何も変わりません。",fx:function(){var x=exApply({},"");return "決めました。何も変わりません。"+x}}]}}},
+ {id:"材料の値上げ",ok:function(){return true},mk:function(){return {kind:"経営",title:"材料メーカーから、値上げの通知が届きました",body:"主な材料が、数%値上がりします。",opts:[{t:"複数の業者から、見積もりを取る",s:"手間はかかりますが、費用を抑えられます。",fx:function(){var x=exApply({fat:2},"材料費率が下がる");return "決めました。手間はかかりますが、費用を抑えられます。"+x}},
+  {t:"そのまま受け入れる",s:"手間はかかりませんが、費用が増えます。",fx:function(){var x=exApply({funds:-2},"");return "決めました。手間はかかりませんが、費用が増えます。"+x}},
+  {t:"使う材料を、見直す",s:"治療の質との兼ね合いがあります。",fx:function(){var x=exApply({fat:2,rep:-1},"材料費率が下がる");return "決めました。治療の質との兼ね合いがあります。"+x}}]}}},
+ {id:"雨漏り",ok:function(){return true},mk:function(){return {kind:"経営",title:"待合室の天井から、水が落ちてきました",body:"大雨の翌日、天井にしみが見つかりました。",opts:[{t:"すぐ業者を呼んで、直す（約15万円）",s:"安心して診療を続けられます。",fx:function(){var x=exApply({funds:-15,staff:1},"");return "決めました。安心して診療を続けられます。"+x}},
+  {t:"家主に連絡して、対応してもらう",s:"費用は抑えられますが、時間がかかります。",fx:function(){var x=exApply({fat:2},"結果は確率で変わる");return "決めました。費用は抑えられますが、時間がかかります。"+x}},
+  {t:"バケツで応急処置をして、様子を見る",s:"患者さんの印象が悪くなります。",fx:function(){var x=exApply({rep:-3},"");return "決めました。患者さんの印象が悪くなります。"+x}}]}}},
+ {id:"口コミへの返信",ok:function(){return true},mk:function(){return {kind:"患者",title:"Googleの口コミに、厳しい意見がありました",body:"「待ち時間が長かった」という投稿です。返信するかどうか、迷っています。",opts:[{t:"丁寧に返信し、改善点を伝える",s:"見た人にも、誠実さが伝わります。",fx:function(){var x=exApply({rep:2,fat:1},"");return "決めました。見た人にも、誠実さが伝わります。"+x}},
+  {t:"返信は、スタッフに任せる",s:"負担が分散されますが、文面にばらつきが出ます。",fx:function(){var x=exApply({staff:-1},"");return "決めました。負担が分散されますが、文面にばらつきが出ます。"+x}},
+  {t:"返信せず、放っておく",s:"変化はありません。",fx:function(){var x=exApply({rep:-1},"");return "決めました。変化はありません。"+x}}]}}},
+ {id:"無断キャンセルの増加",ok:function(){return true},mk:function(){return {kind:"患者",title:"無断キャンセルが、続いています",body:"この2週間で、5件の無断キャンセルがありました。",opts:[{t:"前日に、確認の連絡を入れる",s:"手間はかかりますが、減ります。",fx:function(){var x=exApply({staff:-1,fat:1,pat:2},"");return "決めました。手間はかかりますが、減ります。"+x}},
+  {t:"キャンセルの規約を作り、周知する",s:"患者さんの印象が気になります。",fx:function(){var x=exApply({rep:-1,pat:1},"");return "決めました。患者さんの印象が気になります。"+x}},
+  {t:"そのままにする",s:"収入が減ります。",fx:function(){var x=exApply({funds:-4},"");return "決めました。収入が減ります。"+x}}]}}},
+ {id:"地域イベントの依頼",ok:function(){return true},mk:function(){return {kind:"患者",title:"小学校から、歯の健康教室の依頼が来ました",body:"診療のあと、出張してほしいとのことです。",opts:[{t:"引き受ける",s:"評判は上がりますが、消耗します。",fx:function(){var x=exApply({rep:3,staff:1,fat:3},"");return "決めました。評判は上がりますが、消耗します。"+x}},
+  {t:"衛生士に任せる",s:"衛生士の成長になります。",fx:function(){var x=exApply({rep:2,staff:2,fat:1},"");return "決めました。衛生士の成長になります。"+x}},
+  {t:"断る",s:"今回は見送ります。",fx:function(){var x=exApply({rep:-1},"");return "決めました。今回は見送ります。"+x}}]}}},
+ {id:"訪問診療の依頼",ok:function(){return true},mk:function(){return {kind:"患者",title:"近くの施設から、訪問診療の依頼が来ました",body:"週に1回、午後に往診してほしいとのことです。",opts:[{t:"引き受ける",s:"収入は増えますが、院長の負担が増えます。",fx:function(){var x=exApply({funds:5,rep:2,fat:6},"");return "決めました。収入は増えますが、院長の負担が増えます。"+x}},
+  {t:"条件を整えてから、引き受ける",s:"時間をかけて準備します。",fx:function(){var x=exApply({funds:-3,rep:1,fat:3},"");return "決めました。時間をかけて準備します。"+x}},
+  {t:"今は、断る",s:"今の診療に集中します。",fx:function(){var x=exApply({},"");return "決めました。今の診療に集中します。"+x}}]}}},
+ {id:"自費の価格設定",ok:function(){return true},mk:function(){return {kind:"患者",title:"自費メニューの価格を、見直したいと思っています",body:"周辺の医院と比べると、少し安いかもしれません。",opts:[{t:"相場を調べて、少し上げる",s:"患者さんの反応は様子見です。",fx:function(){var x=exApply({funds:4,rep:-1},"");return "決めました。患者さんの反応は様子見です。"+x}},
+  {t:"価格は据え置き、説明を丁寧にする",s:"丁寧さで勝負します。",fx:function(){var x=exApply({rep:1,fat:2},"");return "決めました。丁寧さで勝負します。"+x}},
+  {t:"下げて、患者さんを増やす",s:"収入が減るおそれがあります。",fx:function(){var x=exApply({funds:-3,pat:2},"");return "決めました。収入が減るおそれがあります。"+x}}]}}},
+ {id:"技工物の品質",ok:function(){return true},mk:function(){return {kind:"院内",title:"技工所の仕上がりに、ばらつきがあります",body:"先週と今週で、かみ合わせの精度に差を感じました。",opts:[{t:"技工所に連絡して、基準を話し合う",s:"関係を築くきっかけになります。",fx:function(){var x=exApply({fat:2,rep:1},"");return "決めました。関係を築くきっかけになります。"+x}},
+  {t:"別の技工所も、試す",s:"手間はかかりますが、比べられます。",fx:function(){var x=exApply({funds:-2,fat:2},"");return "決めました。手間はかかりますが、比べられます。"+x}},
+  {t:"気になるが、そのままにする",s:"患者さんの印象が下がるかもしれません。",fx:function(){var x=exApply({rep:-2},"");return "決めました。患者さんの印象が下がるかもしれません。"+x}}]}}},
+];
+function genMisc(){var seen=S.mseen=S.mseen||[],pool=EXEV.filter(function(e){return e.ok()}),fresh=pool.filter(function(e){return seen.indexOf(e.id)<0});if(!fresh.length){S.mseen=seen=[];fresh=pool}if(!fresh.length)return null;var e=pickA(fresh);seen.push(e.id);return e.mk()}
+var EXTALK=[
+ function(){var p=pickStaff();if(!p)return null;return talk(p,"先生、新しい機器の使い方が、まだ自信がなくて……。",[{t:"一緒に練習する時間をつくろう。",fx:function(){exApply({staff:4,fat:2},"");return "ありがとうございます！ 助かります。"}},
+  {t:"マニュアルを読んでおいて。",fx:function(){exApply({staff:-2},"");return "……はい、読んでおきます。"}},
+  {t:"メーカーの講習に参加してもらおう。",fx:function(){exApply({funds:-3,staff:3},"");return "お願いします。心強いです。"}}])},
+ function(){var p=pickStaff();if(!p)return null;return talk(p,"お昼の休憩が、取れない日が多くて……。",[{t:"予約の入れ方を、見直そう。",fx:function(){exApply({staff:4,fat:2,funds:-1},"");return "ありがとうございます。助かります。"}},
+  {t:"忙しいから、仕方ないよ。",fx:function(){exApply({staff:-5},"");return "……そうですね。"}},
+  {t:"順番に、休めるようにしよう。",fx:function(){exApply({staff:3,fat:1},"");return "ありがとうございます！"}}])},
+ function(){var p=pickStaff();if(!p)return null;return talk(p,"先生の言い方が、少し強く感じる時があって……。",[{t:"気をつけるよ。教えてくれて、ありがとう。",fx:function(){exApply({staff:5,fat:1},"");return "ありがとうございます。"}},
+  {t:"そんなつもりは、なかったんだけど。",fx:function(){exApply({staff:-3},"");return "……すみません。"}},
+  {t:"具体的に、どんな場面か教えてくれる？",fx:function(){exApply({staff:3,fat:2},"");return "はい、お話しします。"}}])},
+ function(){var p=pickStaff();if(!p)return null;return talk(p,"来月、旅行に行きたいので、連休を取りたいです。",[{t:"もちろん。楽しんできて。",fx:function(){exApply({staff:4,fat:1},"");return "ありがとうございます！"}},
+  {t:"診療が詰まっている日は、避けてほしい。",fx:function(){exApply({staff:-1},"");return "……分かりました。"}},
+  {t:"ほかの人と調整して、決めよう。",fx:function(){exApply({staff:1,fat:1},"");return "はい、相談してみます。"}}])},
+ function(){var p=pickStaff(['歯科衛生士','歯科助手']);if(!p)return null;return talk(p,"受付と、診療室の連携が取れていない気がします。",[{t:"朝礼で、情報の共有を増やそう。",fx:function(){exApply({staff:3,fat:1},"");return "はい、やってみます。"}},
+  {t:"私が間に入って、整理するよ。",fx:function(){exApply({staff:2,fat:3},"");return "助かります。"}},
+  {t:"今のままで、大丈夫だと思うよ。",fx:function(){exApply({staff:-3},"");return "……そうですか。"}}])},
+ function(){var p=pickStaff();if(!p)return null;return talk(p,"患者さんの名前と顔が、なかなか覚えられなくて……。",[{t:"メモを取りながらで、大丈夫だよ。",fx:function(){exApply({staff:3},"");return "ありがとうございます。"}},
+  {t:"ひとり一人、覚えるのが大事だよ。",fx:function(){exApply({staff:-2},"");return "……頑張ります。"}},
+  {t:"予約表に写真のメモを付けよう。",fx:function(){exApply({staff:2,fat:1},"");return "なるほど、やってみます。"}}])},
+ function(){var p=pickStaff();if(!p)return null;return talk(p,"制服を、新しくしたいです。みんなで相談しました。",[{t:"いいね。予算の範囲で決めよう。",fx:function(){exApply({funds:-5,staff:5},"");return "ありがとうございます！"}},
+  {t:"今のもので十分だよ。",fx:function(){exApply({staff:-3},"");return "……そうですね。"}},
+  {t:"スタッフの好みで、選んでもらおう。",fx:function(){exApply({funds:-4,staff:4,rep:1},"");return "やった！ みんなで選びます。"}}])},
+ function(){var p=pickStaff(['歯科助手']);if(!p)return null;return talk(p,"待合室の掲示物を、新しくしたいです。",[{t:"任せるよ。",fx:function(){exApply({staff:3,rep:1},"");return "ありがとうございます！ がんばります。"}},
+  {t:"内容は、私が確認するね。",fx:function(){exApply({staff:1,fat:1},"");return "お願いします。"}},
+  {t:"今のままで、いいよ。",fx:function(){exApply({staff:-2},"");return "……分かりました。"}}])},
+ function(){var p=pickStaff();if(!p)return null;return talk(p,"歓迎会を、やりませんか。新しく入った人のために。",[{t:"やろう。費用は私が出すよ。",fx:function(){exApply({funds:-3,staff:5,fat:-2},"");return "やったー！"}},
+  {t:"ランチに行くくらいにしよう。",fx:function(){exApply({funds:-1,staff:3},"");return "はい、それでも嬉しいです。"}},
+  {t:"今は、余裕がないんだ。",fx:function(){exApply({staff:-3},"");return "……そうですか。"}}])},
+ function(){var p=pickStaff(['歯科衛生士','歯科助手']);if(!p)return null; if(!p.f) return null;return talk(p,"子どもの学校行事があって、早めに帰りたい日があります。",[{t:"もちろん。みんなに共有しておこう。",fx:function(){exApply({staff:5},"");return "ありがとうございます。"}},
+  {t:"予約が少ない日に、お願いしたいな。",fx:function(){exApply({staff:1},"");return "はい、調整します。"}},
+  {t:"なるべく、避けてほしい。",fx:function(){exApply({staff:-5},"");return "……分かりました。"}}])},
+ function(){var p=pickStaff(['歯科衛生士','歯科助手']);if(!p)return null;return talk(p,"勤務時間を、少し短くできないでしょうか。",[{t:"時短でも、続けてほしい。調整しよう。",fx:function(){exApply({staff:5,fat:2},"診療枠が減る");return "ありがとうございます！"}},
+  {t:"いまのままで、続けてほしい。",fx:function(){exApply({staff:-4},"");return "……分かりました。"}},
+  {t:"週に1日だけ、短くしよう。",fx:function(){exApply({staff:2,fat:1},"");return "ありがとうございます。"}}])},
+ function(){var p=pickStaff();if(!p)return null;return talk(p,"患者さんに、「ありがとう」と言われて、嬉しかったです。",[{t:"それは良かった。みんなに共有しよう。",fx:function(){exApply({staff:4,rep:1},"");return "ありがとうございます！"}},
+  {t:"これからも、その調子で。",fx:function(){exApply({staff:1},"");return "はい、頑張ります。"}},
+  {t:"たまたまだよ。",fx:function(){exApply({staff:-1},"");return "……そうですね。"}}])},
+ function(){var p=pickStaff(['歯科助手']);if(!p)return null;return talk(p,"実は、先日の器具の準備ミスを、言い出せなくて……。",[{t:"正直に話してくれて、ありがとう。",fx:function(){exApply({staff:4},"");return "ありがとうございます。"}},
+  {t:"次からは、すぐに報告して。",fx:function(){exApply({staff:-2},"");return "……はい。気をつけます。"}},
+  {t:"チェックの仕組みを、一緒に作ろう。",fx:function(){exApply({staff:3,fat:2},"");return "はい、お願いします。"}}])},
+ function(){var p=pickStaff();if(!p)return null;return talk(p,"掃除の当番が、偏っている気がします。",[{t:"当番表を作り直そう。",fx:function(){exApply({staff:4,fat:1},"");return "ありがとうございます。"}},
+  {t:"私が、まとめて調整するよ。",fx:function(){exApply({staff:2,fat:2},"");return "助かります。"}},
+  {t:"それぞれで、うまくやってほしい。",fx:function(){exApply({staff:-3},"");return "……そうですか。"}}])},
+ function(){var p=pickStaff();if(!p)return null;return talk(p,"駐車場が、患者さんで満車の日が増えています。",[{t:"近くに駐車場を借りよう（月1万円）。",fx:function(){exApply({funds:-1,rep:2},"毎月の固定費が増える");return "助かります。患者さんも、喜ぶと思います。"}},
+  {t:"案内の看板を出そう。",fx:function(){exApply({funds:-1,rep:1},"");return "はい、作ってみます。"}},
+  {t:"様子を見よう。",fx:function(){exApply({rep:-1},"");return "……はい。"}}])},
+ function(){var p=pickStaff(['歯科衛生士']);if(!p)return null;return talk(p,"実習生が、見学に来たいそうです。見ても大丈夫でしょうか。",[{t:"歓迎しよう。教え役は任せるね。",fx:function(){exApply({staff:3,rep:1,fat:1},"");return "ありがとうございます！ 頑張ります。"}},
+  {t:"今は、忙しいから難しいね。",fx:function(){exApply({staff:-2},"");return "……分かりました。"}},
+  {t:"少人数なら、受けよう。",fx:function(){exApply({staff:1,rep:1},"");return "はい、調整します。"}}])},
+ function(){var p=pickStaff(['勤務医']);if(!p)return null;return talk(p,"先生、新しい治療を、うちでも始めてみませんか。",[{t:"いいね。まず勉強会を開こう。",fx:function(){exApply({funds:-3,staff:4,rep:1},"");return "ありがとうございます！"}},
+  {t:"今は、今の治療を丁寧にやろう。",fx:function(){exApply({staff:-2},"");return "……はい、分かりました。"}},
+  {t:"先に、症例を調べてみよう。",fx:function(){exApply({staff:2,fat:1},"");return "はい、まとめてみます。"}}])},
+ function(){var p=pickStaff(['歯科衛生士']);if(!p)return null;return talk(p,"メンテナンスの予約の取り方を、少し変えたいんです。",[{t:"やってみよう。まず1か月試そう。",fx:function(){exApply({staff:3,rec:2},"");return "ありがとうございます！"}},
+  {t:"今の方法のままで、いいよ。",fx:function(){exApply({staff:-2},"");return "……そうですか。"}},
+  {t:"私も、一緒に考えるよ。",fx:function(){exApply({staff:2,rec:1,fat:1},"");return "助かります。"}}])},
+ function(){var p=pickStaff(['歯科助手']);if(!p)return null;return talk(p,"電話の対応マニュアルを、作りたいです。",[{t:"いいね。作ってみて。",fx:function(){exApply({staff:3,rep:1},"");return "ありがとうございます！"}},
+  {t:"私も確認するから、教えて。",fx:function(){exApply({staff:2,fat:1},"");return "はい、お願いします。"}},
+  {t:"今のやり方で、大丈夫だよ。",fx:function(){exApply({staff:-2},"");return "……そうですか。"}}])},
+ function(){var p=pickStaff();if(!p)return null;return talk(p,"最近、少し調子が悪くて……。大丈夫なんですが。",[{t:"無理しないで。今日は早く帰って。",fx:function(){exApply({staff:5,fat:2},"");return "ありがとうございます。助かります。"}},
+  {t:"忙しいけど、頑張ってほしい。",fx:function(){exApply({staff:-5},"");return "……はい。"}},
+  {t:"一度、話を聞かせてくれる？",fx:function(){exApply({staff:3,fat:2},"");return "はい、聞いてください。"}}])},
+ function(){if(!((S.prof.form.id==='fam'||S.prof.form.id==='third')))return null;var p=pickStaff();if(!p)return null;return talk(p,"先代のやり方に慣れていて、新しいやり方が少し戸惑います……。",[{t:"変えた理由を、ちゃんと説明するよ。",fx:function(){exApply({staff:4,fat:1},"");return "ありがとうございます。それなら、安心です。"}},
+  {t:"少しずつ、慣れてほしい。",fx:function(){exApply({staff:-3},"");return "……はい、頑張ります。"}},
+  {t:"一部は、前のやり方に戻そう。",fx:function(){exApply({staff:3,fat:1},"");return "助かります。"}}])},
+];
+var EXDAILY=[
+ function(){var p=pickStaff();return p&&{tag:"スタッフ",t:"@@さんが、新しい衛生士の相談にのっていた。".replace('@@',p.n),fx:{staff:1}}},
+ function(){var p=pickStaff();return p&&{tag:"スタッフ",t:"@@さんが、診療のあと、器具を丁寧に磨いてくれていた。".replace('@@',p.n),fx:{staff:1}}},
+ function(){var p=pickStaff();return p&&{tag:"スタッフ",t:"@@さんが、朝一番に院内の花を替えてくれた。".replace('@@',p.n),fx:{staff:1}}},
+ function(){return {tag:"スタッフ",t:"休憩室で、スタッフが趣味の話で盛り上がっていた。",fx:{staff:1}}},
+ function(){var p=pickStaff();return p&&{tag:"スタッフ",t:"@@さんが、予約表の誤りに気づいて、直してくれた。".replace('@@',p.n),fx:{rep:1}}},
+ function(){var p=pickStaff(['歯科衛生士','歯科助手']);return p&&{tag:"スタッフ",t:"@@さんが、患者さんの話をじっくり聞いていた。".replace('@@',p.n),fx:{rep:1}}},
+ function(){var p=pickStaff();return p&&{tag:"スタッフ",t:"朝礼で、@@さんが、今日の注意点を話してくれた。".replace('@@',p.n),fx:{staff:1}}},
+ function(){var p=pickStaff();return p&&{tag:"スタッフ",t:"@@さんが、少し疲れた顔をしている。".replace('@@',p.n),fx:{staff:-1}}},
+ function(){return {tag:"スタッフ",t:"スタッフ同士で、誕生日のお祝いをしていた。",fx:{staff:2}}},
+ function(){var p=pickStaff();return p&&{tag:"スタッフ",t:"@@さんが、新人に、丁寧にやり方を教えていた。".replace('@@',p.n),fx:{staff:1}}},
+ function(){var p=pickStaff();return p&&{tag:"スタッフ",t:"@@さんが、早めに出勤して、準備をしてくれた。".replace('@@',p.n),fx:{fat:-1}}},
+ function(){var p=pickStaff();return p&&{tag:"スタッフ",t:"@@さんが、「先生、少し休んでくださいね」と声をかけてくれた。".replace('@@',p.n),fx:{fat:-2}}},
+ function(){var p=pickStaff(['歯科衛生士','歯科助手']);return p&&{tag:"スタッフ",t:"@@さんが、診療台の消毒を、念入りにしてくれた。".replace('@@',p.n),fx:{rep:1}}},
+ function(){return {tag:"スタッフ",t:"スタッフが、院内の整理整頓について、アイデアを出してくれた。",fx:{staff:1}}},
+ function(){return {tag:"患者",t:"常連の患者さんが、お菓子を持ってきてくれた。",fx:{staff:1}}},
+ function(){return {tag:"患者",t:"患者さんが、友人を連れてきてくれた。",fx:{pat:1}}},
+ function(){return {tag:"患者",t:"患者さんの子どもが、診察台で泣かずに座れた。",fx:{rep:1}}},
+ function(){return {tag:"患者",t:"「ここは、説明がわかりやすい」と言ってもらえた。",fx:{rep:1}}},
+ function(){return {tag:"患者",t:"予約の時間に遅れて来る患者さんが、続いた。",fx:{fat:1}}},
+ function(){return {tag:"患者",t:"電話での問い合わせが、いつもより多かった。",fx:{pat:1}}},
+ function(){return {tag:"患者",t:"痛みのある患者さんが、急に来院した。",fx:{funds:1,fat:1}}},
+ function(){return {tag:"患者",t:"患者さんが、アンケートに、丁寧なコメントを書いてくれた。",fx:{rep:1}}},
+ function(){return {tag:"患者",t:"治療が終わった患者さんが、「また来ます」と笑顔で帰った。",fx:{rep:1}}},
+ function(){return {tag:"患者",t:"定期検診の患者さんが、予定どおり来院した。",fx:{rec:1}}},
+ function(){return {tag:"患者",t:"引っ越しで通えなくなる、と患者さんに言われた。",fx:{rec:-1}}},
+ function(){return {tag:"患者",t:"患者さんから、お礼のメッセージが届いた。",fx:{rep:1}}},
+ function(){return {tag:"患者",t:"待合室で、患者さん同士が、楽しそうに話していた。",fx:{rep:1}}},
+ function(){return {tag:"患者",t:"予約が空いた時間に、飛び込みの患者さんが来院した。",fx:{funds:1}}},
+ function(){return {tag:"患者",t:"患者さんに、治療の説明を聞き返された。もう一度、丁寧に説明した。",fx:{fat:1,rep:1}}},
+ function(){return {tag:"患者",t:"小学生の患者さんが、磨き残しがなく、褒められていた。",fx:{rep:1}}},
+ function(){return {tag:"院内",t:"ゴミ出しの日を、うっかり忘れそうになった。",fx:{fat:1}}},
+ function(){return {tag:"院内",t:"電話が重なって、受付が少し慌てた。",fx:{fat:1}}},
+ function(){return {tag:"院内",t:"院内の掃除が行き届いていて、気持ちのいい朝だった。",fx:{staff:1}}},
+ function(){return {tag:"院内",t:"待合室の雑誌を、新しくした。",fx:{rep:1}}},
+ function(){return {tag:"院内",t:"予約システムの画面が、少し重たかった。",fx:{fat:1}}},
+ function(){return {tag:"院内",t:"業者が、消耗品の納品に来た。"}},
+ function(){return {tag:"院内",t:"ホームページの問い合わせが、1件入っていた。",fx:{pat:1}}},
+ function(){return {tag:"院内",t:"待合室の観葉植物が、元気に育っている。",fx:{rep:1}}},
+ function(){return {tag:"院内",t:"エアコンの調子が、少し悪い。",fx:{fat:1}}},
+ function(){return {tag:"院内",t:"近所の方が、散歩の途中で、診療時間を聞いていった。",fx:{pat:1}}},
+ function(){return {tag:"院内",t:"院内の掲示を、季節に合わせて入れ替えた。",fx:{rep:1}}},
+ function(){return {tag:"院内",t:"朝一番の予約が、キャンセルになった。",fx:{funds:-1}}},
+ function(){return {tag:"院内",t:"診療が、予定より早く終わった。",fx:{fat:-1}}},
+ function(){return {tag:"院内",t:"お昼に、近所のお弁当を、みんなで食べた。",fx:{staff:1,fat:-1}}},
+ function(){return {tag:"院内",t:"事務作業が、たまってきた。",fx:{fat:1}}},
+ function(){return eqOk('ct')&&{tag:"機器",t:"CTの画像で、患者さんに、とても分かりやすく説明できた。",fx:{rep:1}}},
+ function(){return eqOk('ios')&&{tag:"機器",t:"口腔内スキャナーのデータを、技工所とすぐ共有できた。",fx:{funds:1}}},
+ function(){return eqOk('mic')&&{tag:"機器",t:"マイクロスコープの映像を、患者さんと一緒に見た。",fx:{rep:1}}},
+ function(){return {tag:"機器",t:"オートクレーブの点検の日だった。問題はなかった。"}},
+ function(){return {tag:"機器",t:"チェアユニットの調子がよく、診療がスムーズだった。",fx:{fat:-1}}},
+ function(){return {tag:"機器",t:"パノラマ撮影で、患者さんが緊張していた。声をかけて、落ち着いた。",fx:{rep:1}}},
+ function(){return {tag:"院長",t:"朝の通勤で、気持ちのいい空だった。",fx:{fat:-1}}},
+ function(){return {tag:"院長",t:"専門誌で、気になる論文を見つけた。"}},
+ function(){return {tag:"院長",t:"昨夜は、よく眠れた。",fx:{fat:-2}}},
+ function(){return {tag:"院長",t:"経営の本を、少し読んだ。"}},
+ function(){return {tag:"院長",t:"ふと、開業の日のことを思い出した。",fx:{fat:-1}}},
+ function(){return {tag:"院長",t:"夜、自分の診療を振り返った。",fx:{fat:1}}},
+ function(){return {tag:"院長",t:"同期の先生から、電話があった。話せて、気が楽になった。",fx:{fat:-2}}},
+ function(){return {tag:"院長",t:"夕食に好きなものを食べて、元気が出た。",fx:{fat:-2}}},
+ function(){return {tag:"院長",t:"少し体が重い。今日は早く休もう。",fx:{fat:2}}},
+ function(){return {tag:"院長",t:"来月の予定を、手帳に書き込んだ。"}},
+ function(){return {tag:"天気",t:"急に雨が降り、予約の患者さんが少し遅れた。",fx:{fat:1}}},
+ function(){return {tag:"天気",t:"暑い日で、待合室の冷房を強めた。"}},
+ function(){return {tag:"天気",t:"季節の変わり目で、体調を崩した患者さんが多かった。",fx:{fat:1}}},
+ function(){return {tag:"天気",t:"寒い朝で、駐車場が凍っていた。念のため、砂をまいた。",fx:{fat:1}}},
+ function(){return {tag:"地域",t:"近くの祭りで、人通りが多かった。",fx:{pat:1}}},
+ function(){return {tag:"地域",t:"近所の学校の保護者会で、医院の名前が話題になっていた。",fx:{rep:1}}},
+ function(){return {tag:"地域",t:"商店街のお店から、チラシ配りの依頼があった。"}},
+ function(){return {tag:"地域",t:"町内会の会合に、診療のあと顔を出した。",fx:{rep:1,fat:1}}},
+];
 function genTalk(){
   var T=[
    function(){var p=pickStaff(['歯科衛生士','歯科助手','勤務医']);return p&&talk(p,'先生、来月のセミナーに参加したいんです。ただ、診療日と重なっていて……。',[
@@ -901,8 +1128,14 @@ function genTalk(){
      {t:'もう少し、様子を見てほしい。',fx:function(){apply({staff:-2});return '……分かりました。'}},
      {t:'角度を変えて、工夫してみよう。',fx:function(){apply({staff:1});return 'やってみます。'}}])}
   ];
-  var ok=[]; T.slice().sort(function(){return Math.random()-0.5}).forEach(function(f){if(!ok.length){var r=f();if(r)ok.push(r)}});
-  return ok[0]||null;
+  T=T.concat(EXTALK);
+  var seen=S.tseen=S.tseen||[], all=T.slice().sort(function(){return Math.random()-0.5}), pick=null, r, i, pass;
+  for(pass=0;pass<2&&!pick;pass++){
+    for(i=0;i<all.length;i++){r=all[i](); if(r&&(pass===1||seen.indexOf(r.body)<0)){pick=r;break}}
+    if(!pick&&pass===0){S.tseen=seen=[]}
+  }
+  if(pick) seen.push(pick.body);
+  return pick;
 }
 function settle(){
   var pen=clamp(S.capPen+S.tmpPen,0,0.5), rev=Math.round(S.pat*S.unit*(1-pen)), mat=Math.round(rev*S.matRate), mg=Math.round(rev*S.mgmtRate);
@@ -923,8 +1156,8 @@ function advanceDay(){
   if(ev.fx) apply(ev.fx);
   if(sc){
     if(sc.type==='claim'){S.claimDay=d;S.dayEv[d]='ca';S.phase='claimintro';fpush('クレームが入りました。','クレーム','warn');return}
-    var e=(sc.type==='hr')?genHR():((sc.type==='eq')?genEq():((sc.type==='learn')?genLearn():((sc.type==='acad')?genLearn('acad'):genTalk())));
-    if(e){S.dayEv[d]=(sc.type==='hr')?'hr':((sc.type==='eq')?'eq':((sc.type==='learn'||sc.type==='acad')?'lrn':'talk'));S.ev=e;S.phase='event';fpush(e.title,e.kind,'warn');return}
+    var e=(sc.type==='hr')?genHR():((sc.type==='eq')?genEq():((sc.type==='learn')?genLearn():((sc.type==='acad')?genLearn('acad'):((sc.type==='misc')?genMisc():genTalk()))));
+    if(e){S.dayEv[d]=(sc.type==='hr'||sc.type==='misc')?'hr':((sc.type==='eq')?'eq':((sc.type==='learn'||sc.type==='acad')?'lrn':'talk'));S.ev=e;S.phase='event';fpush(e.title,e.kind,'warn');return}
   }
   if(d%30===0) settle();
 }
@@ -1485,7 +1718,7 @@ function rollProfile(){
   S.matRate=(form.id==='ma')?0.08:0.12; S.mgmtRate=(form.id==='ma')?0.10:0;
   S.debt=debt; S.debt0=debt; S.princ=Math.round(debt/120); S.ds=ds; S.ret=form.ret;
   S.quota=(form.id==='ma')?Math.round(base*1.05):0;
-  S.trk={pos:0,neg:0,inv:0}; S.learned=[]; S.vseen=[]; S.fbHist=[]; S.mood=null; S.fb=null; S.fbAi=null; S.d={}; S.log=[]; S.res=[]; S.ng=0; S.m=1; S.feed=[]; S.day=0; S.today=null; S.speed=1; S.paused=false; S.sched=[]; S.mlog=[]; S.dayEv={}; S.treats={}; S.rvText={}; S.cardUrl=null; S.code='CLN-2026-'+rnd(100,999);
+  S.trk={pos:0,neg:0,inv:0}; S.learned=[]; S.vseen=[]; S.mseen=[]; S.tseen=[]; S.fbHist=[]; S.mood=null; S.fb=null; S.fbAi=null; S.d={}; S.log=[]; S.res=[]; S.ng=0; S.m=1; S.feed=[]; S.day=0; S.today=null; S.speed=1; S.paused=false; S.sched=[]; S.mlog=[]; S.dayEv={}; S.treats={}; S.rvText={}; S.cardUrl=null; S.code='CLN-2026-'+rnd(100,999);
 }
 function decOpts(){
   if(S.m!==1) return DEC[S.m-1];
