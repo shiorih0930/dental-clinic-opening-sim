@@ -187,6 +187,7 @@ details.refs ul{padding-left:18px;margin:8px 0}
 details.refs li{margin-bottom:4px}
 a{color:var(--accent)}
 @media (prefers-reduced-motion:reduce){.gauge i{transition:none}}
+.bax{display:grid;grid-template-columns:136px 1fr 36px;gap:8px;align-items:center;margin:8px 0 2px;font-size:14px}.bax .tr{background:var(--line);border-radius:4px;height:8px}.bax i{display:block;height:8px;border-radius:4px;background:var(--accent)}.bax b{text-align:right;font-variant-numeric:tabular-nums}
 </style>
 
 <div class="app">
@@ -342,16 +343,40 @@ var ACA={
   root:{t:'もっと早く知りたかった、根管治療の経営学',m:'2026/10/18 10:00〜（満員御礼）',u:'https://academy.doctorbook.jp/contents/5842',why:'診療の中身を、医院の数字とつなげて考えたいときに。'},
   mgmt:{t:'医院経営全般の動画・セミナー一覧',m:'「労務管理」「補助金助成金」「事業承継」などの分類もあります',u:'https://academy.doctorbook.jp/contents?sub_category_ids%5B%5D=83',why:'スタッフの人事や承継など、経営の悩みを幅広く探せます。'}
 };
-function academyHtml(){
-  var P=S.prof, f=P.form.id, picks=[], has=function(w){return (S.mlog||[]).some(function(l){return l.indexOf(w)>=0})};
-  if(f==='new'||f==='ink') picks.push(ACA.open,ACA.tax);
-  else picks.push(ACA.mgmt);
-  if(has('機器')||S.funds<S.funds0*0.8) picks.push(ACA.space);
-  if(has('スタッフ')||S.staff<50) picks.push(ACA.mgmt);
-  picks.push(ACA.root,ACA.mgmt);
-  var seen={},out=[]; picks.forEach(function(x){if(!seen[x.u]&&out.length<3){seen[x.u]=1;out.push(x)}});
-  return '<div class="aca"><div class="acah">'+logoImg(30,'logo')+'<span>で、経営をもっと学ぶ</span></div><p class="note">ここまでの経営から、気になるところに合いそうなコンテンツです。掲載内容は2026年10月15日の確認時点のもので、変わることがあります。</p><ul class="acal">'+
-   out.map(function(x){return '<li><a href="'+x.u+'" target="_blank" rel="noopener">'+esc(x.t)+'</a><br><small>'+esc(x.m)+'</small><br><span>'+esc(x.why)+'</span></li>'}).join('')+'</ul></div>';
+var BAX=[
+ {k:'funds',n:'資金繰り',th:['money'],hi:'資金に余力があります。投資や備えに回せる状態です。',mid:'資金は保てています。固定費と返済の比率を、ときどき見直したい状態です。',lo:'資金が減っています。固定費と投資のバランスを見直したい局面です。'},
+ {k:'staff',n:'人材・組織',th:['staff'],hi:'スタッフが安定していて、現場に余力があります。',mid:'スタッフは大きく崩れていません。声かけや面談の頻度が、次の差になります。',lo:'スタッフの満足度が低めです。採用・教育・定着の仕組みを見直したい局面です。'},
+ {k:'rep',n:'集患・評判',th:['rep','unit'],hi:'評判と口コミが育っています。新患の流れが安定しやすい状態です。',mid:'評判は平均的です。見せ方と説明の仕組みが、次の伸びしろです。',lo:'評判と口コミが伸び悩んでいます。見せ方と、患者さんへの説明を見直したい局面です。'},
+ {k:'ops',n:'院長の体力・仕組み',th:['ops'],hi:'院長に余裕があります。仕組みづくりに時間を使えます。',mid:'院長の負担は許容範囲です。委任と休みを、早めに入れておきたい状態です。',lo:'院長の消耗が高めです。委任や仕組み化で、負担を分けたい局面です。'}
+];
+function bizScore(k){
+  if(k==='funds') return clamp(Math.round(S.funds/Math.max(1,S.funds0)*60),0,100);
+  if(k==='staff') return clamp(Math.round(S.staff),0,100);
+  if(k==='rep') return clamp(Math.round(S.rep*0.6+clamp((avg()-3)*50,0,100)*0.4),0,100);
+  return clamp(Math.round(100-S.fat),0,100);
+}
+function bizItems(ax,n,used){
+  var out=VIDS.filter(function(v){return v.id&&!v.fee&&!v.camp&&ax.th.indexOf(v.th)>=0&&!used[v.id]});
+  out.sort(function(){return Math.random()-0.5});
+  return out.slice(0,n).map(function(v){used[v.id]=1;return {t:v.t,m:v.pl+(v.w?'・'+v.w:''),u:'https://academy.doctorbook.jp/contents/'+v.id,why:ax.n+'を見直したいときに。'}});
+}
+function academyHtml(compact){
+  var key=(S.phase==='final')?'f':String(S.m); S.bizC=S.bizC||{};
+  var axes=BAX.map(function(a){var v=bizScore(a.k);return {a:a,v:v,c:v>=70?a.hi:(v>=45?a.mid:a.lo)}});
+  var order=axes.slice().sort(function(x,y){return x.v-y.v});
+  if(!S.bizC[key]){
+    var used={}, out=[], f=S.prof.form.id;
+    out=out.concat(bizItems(order[0].a,compact?2:2,used));
+    out=out.concat(bizItems(order[1].a,1,used));
+    if(!compact&&(f==='new'||f==='ink')&&order[0].a.k==='funds') out.push(ACA.tax);
+    else if(!compact) out.push(ACA.mgmt);
+    S.bizC[key]=out.slice(0,3);
+  }
+  var bars=axes.map(function(x){return '<div class="bax"><span>'+x.a.n+'</span><div class="tr"><i style="width:'+x.v+'%"></i></div><b>'+x.v+'</b></div><p class="note" style="margin:0 0 6px">'+esc(x.c)+'</p>'}).join('');
+  var w=order[0];
+  return '<div class="aca"><div class="acah">'+logoImg(30,'logo')+'<span>で、経営をもっと学ぶ</span></div><h3 style="margin:10px 0 4px">'+(compact?'今月の経営の見え方':'あなたの経営の4つの軸')+'</h3>'+(compact?('<p class="note" style="margin:0 0 6px">いちばん伸びしろがあるのは、<b>'+w.a.n+'</b>（'+w.v+'）です。'+esc(w.c)+'</p>'):bars)+
+   '<p class="note">'+(compact?'次の月に向けて、':'')+'この数字に合いそうなコンテンツです。掲載内容は確認時点のもので、変わることがあります。</p><ul class="acal">'+
+   S.bizC[key].map(function(x){return '<li><a href="'+x.u+'" target="_blank" rel="noopener">'+esc(x.t)+'</a><br><small>'+esc(x.m)+'</small><br><span>'+esc(x.why)+'</span></li>'}).join('')+'</ul></div>';
 }
 function fresh(){return {phase:'intro',m:1,funds:600,funds0:600,rep:50,recur:100,newp:20,pat:120,staff:60,fat:20,rsum:48,rn:12,r0:4,d:{},log:[],res:[],ng:0,pick:null,visit:null,sc:null,draft:'',ftmsg:'',mode:'sample',csvList:[],prof:null,base:30,unit:0.9,rent:25,stf:90,other:12,matRate:0.12,mgmtRate:0,debt:0,debt0:0,princ:0,ds:0,ret:0.9,quota:0}}
 S=fresh();
@@ -770,11 +795,11 @@ function makeSched(){
 /* ---------- Doctorbook の学びと仕組み（動画・オンライン視聴・スタッフの学習・在庫管理・ハンズオン） ---------- */
 /* MFTアプリ「キラモンアドベンチャー」は、公式ページ（Doctorbookが提供・トレーニングをゲーム化・継続率の向上とスタッフの負担軽減をうたう）の範囲の記述です。月額などの費用と効果は、ゲーム内の仮の設定です。 */
 /* サービスの内容は、academy.doctorbook.jp で確認できた範囲です。受講料や月額、効果の大きさは、ゲーム内の仮の設定です。 */
-var VIDS=[{id:5833,t:'採用はゴールじゃない！人材育成・組織づくり、採用・育成・定着のコツ',w:'平 早由加',pl:'プレミアム',th:'staff'},{id:5839,t:'これだけは知っておきたい初めての開業の戦略',w:'津島 克哉',pl:'プレミアム',th:'money'},{id:5814,t:'患者さんも、医療者も惹きつける「マグネットクリニック」｜池ノ台ゆかり歯科',w:'熱田 悠佳里',pl:'無料',th:'rep'},{id:5806,t:'ZOOワンオペが変えた歯科医院 -人が活きる環境へ-',w:'英保 裕和',pl:'無料',th:'staff'},{id:4208,t:'データを元に解説！歯科医師が生涯かかるお金のハナシ',w:'中山 尭盛',pl:'プレミアム',th:'money'},{id:5759,t:'持続可能な教育の仕組み化！',w:'Doctorbook編集部',pl:'無料',th:'staff'},{id:5355,t:'臨床と経営の両立メソッド 成長するクリニックが実践するマネジメントの秘訣',w:'千賀 誓人・矢野 孝星',pl:'プレミアム',th:'money'},{id:5522,t:'TCは最強のキャリアパスポート 〜歯科スタッフの新しい働き方〜',w:'鈴木 誓子',pl:'プレミアム',th:'unit'},{id:5431,t:'歯科医院のための初めての生成AI活用術',w:'伊佐津 貴之・渡部 準也',pl:'プレミアム',th:'ops'},{id:4988,t:'地方でも自費率50％!! ”鉄板のしくみ”初診コンサルで自費率・メンテを増やす!!',w:'元島 道信',pl:'プレミアム',th:'unit'},{id:5084,t:'採用の鍵！人材にかかる様々なコスト',w:'津島 克哉・青野 茉莉恵',pl:'みんなプレミアム限定',th:'staff'},{id:5137,t:'歯科医師の本音にプロが答える！デジタル時代の集患対策',w:'櫻井 祐弥・植松 芳宏',pl:'無料',th:'rep'},{id:5927,t:'費用対効果を最大化！唯一無二の「マーケティング発想のクリニック空間設計」',w:'',pl:'無料',th:'rep'},{id:0,u:'https://pr-contents.doctorbook.jp/tsukiichi_kansyaday',t:'クリンチェック Tetori Ashitori 第1期〜第4期 まとめ購入',w:'岡野 修一郎',pl:'有料セット（月イチ感謝デー対象）',th:'unit',fee:6,camp:1},{id:0,u:'https://academy.doctorbook.jp/features/243',t:'月星太介先生に学ぶ 外傷歯と自家歯牙移植セット',w:'月星 太介',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:4,camp:1},{id:0,u:'https://pr-contents.doctorbook.jp/syoureihyapponnokku_special',t:'症例 100本ノックシリーズ丨全17回＋特別講演',w:'土屋 賢司',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:8,camp:1},{id:0,u:'https://academy.doctorbook.jp/contents/5262',t:'K2オンラインコース 〜伝説の歯科技工士 桑田正博先生の教えを臨床に活かす〜 全5回',w:'北原 信也ほか',pl:'有料セット（月イチ感謝デー対象）',th:'unit',fee:6,camp:1},{id:0,u:'https://academy.doctorbook.jp/contents/5527',t:'ズバリ、ここから始めたい！下顎埋伏智歯抜歯のアドバンスドベーシックハンズオンコース',w:'新名主 耕平・山崎 新太郎',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:6,camp:1},{id:0,u:'https://pr-contents.doctorbook.jp/rinsyousikawokatarukai-43',t:'臨床歯科を語る会 第43回 全45動画視聴プラン',w:'',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:5,camp:1},{id:0,u:'https://pr-contents.doctorbook.jp/rinsyousikawokatarukai-44',t:'臨床歯科を語る会 第44回 全53動画視聴プラン',w:'',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:5,camp:1},{id:5883,t:'クリンチェック Tetori Ashitori 第4期',w:'岡野 修一郎',pl:'有料（22,000円〜）',th:'unit',fee:2},{id:5547,t:'チームで取り組む！感染対策マネジメント 超Basic',w:'佐野 喬祐',pl:'プレミアム',th:'ops'}];
+var VIDS=[{id:5833,t:'採用はゴールじゃない！人材育成・組織づくり、採用・育成・定着のコツ',w:'平 早由加',pl:'プレミアム',th:'staff'},{id:5839,t:'これだけは知っておきたい初めての開業の戦略',w:'津島 克哉',pl:'プレミアム',th:'money'},{id:5814,t:'患者さんも、医療者も惹きつける「マグネットクリニック」｜池ノ台ゆかり歯科',w:'熱田 悠佳里',pl:'無料',th:'rep'},{id:5806,t:'ZOOワンオペが変えた歯科医院 -人が活きる環境へ-',w:'英保 裕和',pl:'無料',th:'staff'},{id:4208,t:'データを元に解説！歯科医師が生涯かかるお金のハナシ',w:'中山 尭盛',pl:'プレミアム',th:'money'},{id:5759,t:'持続可能な教育の仕組み化！',w:'Doctorbook編集部',pl:'無料',th:'staff'},{id:5355,t:'臨床と経営の両立メソッド 成長するクリニックが実践するマネジメントの秘訣',w:'千賀 誓人・矢野 孝星',pl:'プレミアム',th:'money'},{id:5522,t:'TCは最強のキャリアパスポート 〜歯科スタッフの新しい働き方〜',w:'鈴木 誓子',pl:'プレミアム',th:'unit'},{id:5431,t:'歯科医院のための初めての生成AI活用術',w:'伊佐津 貴之・渡部 準也',pl:'プレミアム',th:'ops'},{id:4988,t:'地方でも自費率50％!! ”鉄板のしくみ”初診コンサルで自費率・メンテを増やす!!',w:'元島 道信',pl:'プレミアム',th:'unit'},{id:5084,t:'採用の鍵！人材にかかる様々なコスト',w:'津島 克哉・青野 茉莉恵',pl:'みんなプレミアム限定',th:'staff'},{id:5137,t:'歯科医師の本音にプロが答える！デジタル時代の集患対策',w:'櫻井 祐弥・植松 芳宏',pl:'無料',th:'rep'},{id:5927,t:'費用対効果を最大化！唯一無二の「マーケティング発想のクリニック空間設計」',w:'',pl:'無料',th:'rep'},{id:0,u:'https://pr-contents.doctorbook.jp/tsukiichi_kansyaday',t:'クリンチェック Tetori Ashitori 第1期〜第4期 まとめ購入',w:'岡野 修一郎',pl:'有料セット（月イチ感謝デー対象）',th:'unit',fee:6,camp:1},{id:0,u:'https://academy.doctorbook.jp/features/243',t:'月星太介先生に学ぶ 外傷歯と自家歯牙移植セット',w:'月星 太介',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:4,camp:1},{id:0,u:'https://pr-contents.doctorbook.jp/syoureihyapponnokku_special',t:'症例 100本ノックシリーズ丨全17回＋特別講演',w:'土屋 賢司',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:8,camp:1},{id:0,u:'https://academy.doctorbook.jp/contents/5262',t:'K2オンラインコース 〜伝説の歯科技工士 桑田正博先生の教えを臨床に活かす〜 全5回',w:'北原 信也ほか',pl:'有料セット（月イチ感謝デー対象）',th:'unit',fee:6,camp:1},{id:0,u:'https://academy.doctorbook.jp/contents/5527',t:'ズバリ、ここから始めたい！下顎埋伏智歯抜歯のアドバンスドベーシックハンズオンコース',w:'新名主 耕平・山崎 新太郎',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:6,camp:1},{id:0,u:'https://pr-contents.doctorbook.jp/rinsyousikawokatarukai-43',t:'臨床歯科を語る会 第43回 全45動画視聴プラン',w:'',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:5,camp:1},{id:0,u:'https://pr-contents.doctorbook.jp/rinsyousikawokatarukai-44',t:'臨床歯科を語る会 第44回 全53動画視聴プラン',w:'',pl:'有料セット（月イチ感謝デー対象）',th:'rep',fee:5,camp:1},{id:5883,t:'クリンチェック Tetori Ashitori 第4期',w:'岡野 修一郎',pl:'有料（22,000円〜）',th:'unit',fee:2},{id:5900,t:'デジタルで可視化する経営指標 with 藤本 智也先生',w:'遠山 敏成・藤本 智也',pl:'プレミアム',th:'money'},{id:5889,t:'見せることで変わる 可視化ツールを活用したモチベーションの獲得',w:'片野 伶香',pl:'プレミアム',th:'staff'},{id:5547,t:'チームで取り組む！感染対策マネジメント 超Basic',w:'佐野 喬祐',pl:'プレミアム',th:'ops'}];
 function genLearn(force){
-  var all=['digi','scope','minpre','shelf','hands','kira','dbsns','resi'], left=all.filter(function(k){return (S.learned||[]).indexOf(k)<0});
+  var all=['digi','scope','minpre','shelf','hands','kira','dbsns','resi','kpi','hirecost','mfplan','moneyq','motiv'], left=all.filter(function(k){return (S.learned||[]).indexOf(k)<0});
   if(!left.length){S.learned=[];left=all}
-  var k=force||pickA(left); if(!force) S.learned=(S.learned||[]).concat([k]);
+  var bizL=left.filter(function(x){return ['kpi','hirecost','mfplan','moneyq','motiv'].indexOf(x)>=0}); var k=force||((bizL.length&&Math.random()<0.6)?pickA(bizL):pickA(left)); if(!force) S.learned=(S.learned||[]).concat([k]);
   var cat=pickA(['歯内療法','歯周治療','予防歯科','小児歯科','咬合機能','デジタル・歯科技工','インプラント']);
   var staffOk=S.roster.filter(function(x){return (x.role==='歯科衛生士'||x.role==='勤務医')&&x.st==='在籍'});
   if(k==='acad'){
@@ -799,6 +824,26 @@ function genLearn(force){
     {t:'自分の研修時代の話をしながら、一緒にサイトを見る',s:'30分ほどかかりますが、後輩の不安がほぐれます。',fx:function(){apply({rep:1,staff:1,fat:1});return '自分の研修時代の話をしながら、施設インタビューや研修医の声を一緒に読みました。後輩は「説明会に申し込んでみます」と、前向きな顔で帰っていきました。'}},
     {t:'サイトのリンクを送って、見てみるよう伝える',s:'短い時間で済みます。',fx:function(){apply({rep:1});return 'リンクを送りました。「施設を探しやすいです」と、後日お礼のメッセージが届きました。'}},
     {t:'今は忙しいので、断る',s:'診療と予約を優先します。',fx:function(){return '今回は、時間が取れませんでした。後輩は、自分で探すことにしたようです。'}}]};
+  if(k=='kpi') return {kind:'学び',title:'経営の数字を、見えるようにしたい',body:'診療のあと、月末の数字を前にして、何から見ればいいのか迷っています。Doctorbook academyに「デジタルで可視化する経営指標」（プレミアム会員向け）という動画があります。内容は、公式ページで確認してください。',link:{t:'デジタルで可視化する経営指標 with 藤本 智也先生',u:'https://academy.doctorbook.jp/contents/5900'},opts:[
+    {t:'見たうえで、毎月見る数字を決め、スタッフにも共有する',s:'最初は手間ですが、数字を見る習慣ができます。',fx:function(){apply({staff:3,rep:1,fat:2});return '毎月見る数字を3つに絞り、朝礼で共有することにしました。「院長が何を見ているか分かる」と、スタッフにも好評でした。'}},
+    {t:'院長だけで、見る数字を決める',s:'短い時間で済みます。',fx:function(){apply({rep:1,fat:1});return '見る数字を3つに絞りました。まずは自分の頭の中を整理できました。'}},
+    {t:'今は、診療で手いっぱいなので見送る',s:'数字は、感覚のままです。',fx:function(){apply({fat:1});return '今回は見送りました。月末になると、また数字の見方に迷いそうです。'}}]};
+  if(k=='hirecost') return {kind:'学び',title:'人を採るお金を、きちんと考えたい',body:'求人にかかる費用や、採用してから戦力になるまでのコストを、ちゃんと数えたことがありません。「採用の鍵！人材にかかる様々なコスト」（みんなプレミアム限定）という動画があります。内容は、公式ページで確認してください。',link:{t:'採用の鍵！人材にかかる様々なコスト',u:'https://academy.doctorbook.jp/contents/5084'},opts:[
+    {t:'見たうえで、採用と教育の予算を決める',s:'手間はかかりますが、採用の判断がぶれにくくなります。',fx:function(){apply({staff:3,fat:2,rep:1});return '募集費と、育成にかかる期間まで含めて、採用の予算を決めました。急な退職のときも、慌てにくくなりそうです。'}},
+    {t:'見るだけにして、今は動かない',s:'学びは残りますが、変化はありません。',fx:function(){apply({staff:1});return '動画を見て、採用にかかるコストの大きさを知りました。今すぐには動きませんが、頭には残りました。'}},
+    {t:'今は見送る',s:'求人の判断は、これまでどおりです。',fx:function(){apply({});return '今回は見送りました。'}}]};
+  if(k=='mfplan') return {kind:'学び',title:'開業の戦略を、3か月たって見直したい',body:'開院から少し経って、最初に立てた計画と、いまの数字を見比べたくなりました。「これだけは知っておきたい初めての開業の戦略」（プレミアム）という動画があります。内容は、公式ページで確認してください。',link:{t:'これだけは知っておきたい初めての開業の戦略',u:'https://academy.doctorbook.jp/contents/5839'},opts:[
+    {t:'見たうえで、計画を書き直す',s:'手間はかかりますが、これからの月の動き方が決まります。',fx:function(){apply({pat:1,rep:1,fat:2});return '動画を参考に、計画を書き直しました。来月の集患の目標が、はっきりしました。'}},
+    {t:'見るだけにして、気づいたことをメモする',s:'短い時間で済みます。',fx:function(){apply({rep:1,fat:1});return '気づいたことをメモしました。計画の見直しは、余裕のあるときにします。'}},
+    {t:'今は見送る',s:'診療を優先します。',fx:function(){apply({});return '今回は見送りました。'}}]};
+  if(k=='moneyq') return {kind:'学び',title:'医院のお金と、自分のお金を整理したい',body:'医院の資金と、自分の生活のお金が、頭の中で混ざってきました。「データを元に解説！歯科医師が生涯かかるお金のハナシ」（プレミアム）という動画があります。内容は、公式ページで確認してください。',link:{t:'データを元に解説！歯科医師が生涯かかるお金のハナシ',u:'https://academy.doctorbook.jp/contents/4208'},opts:[
+    {t:'見たうえで、医院と自分のお金を分けて整理する',s:'少し時間をかけて、数字の見方を整えます。',fx:function(){apply({fat:-1,rep:1});return '医院のお金と自分のお金を分けて、紙に書き出しました。数字の不安が、少し軽くなりました。'}},
+    {t:'見るだけにして、税理士さんに質問を整理する',s:'次の相談で聞くことが、明確になります。',fx:function(){apply({fat:1,rep:1});return '税理士さんに聞きたいことを、メモにまとめました。'}},
+    {t:'今は見送る',s:'診療を優先します。',fx:function(){apply({});return '今回は見送りました。'}}]};
+  if(k=='motiv') return {kind:'学び',title:'スタッフのやる気を、見える形にしたい',body:'スタッフのやる気が、数字や表情に出にくく、何をすれば伝わるのか迷っています。「見せることで変わる 可視化ツールを活用したモチベーションの獲得」（プレミアム）という動画があります。内容は、公式ページで確認してください。',link:{t:'見せることで変わる 可視化ツールを活用したモチベーションの獲得',u:'https://academy.doctorbook.jp/contents/5889'},opts:[
+    {t:'見たうえで、スタッフと一緒に、見える化の方法を決める',s:'手間はかかりますが、現場の納得感が上がります。',fx:function(){apply({staff:5,fat:2});return '「どんな形なら見やすいか」をスタッフと話し合いました。自分たちで決めたことで、前向きな空気になりました。'}},
+    {t:'院長が決めて、スタッフに伝える',s:'早く決まりますが、実感は薄くなります。',fx:function(){apply({staff:2,fat:1});return '見える化の方法を決めて、朝礼で伝えました。反応は、まずまずでした。'}},
+    {t:'今は見送る',s:'変化はありません。',fx:function(){apply({});return '今回は見送りました。'}}]};
   if(k==='kira') return {kind:'学び',title:'MFTのトレーニングが、続かない',body:'小児の患者さんに、舌や口まわりの筋機能療法（MFT）を指導していますが、自宅での練習がなかなか続きません。衛生士も、毎回の説明と確認に手間をとられています。Doctorbookの「MFTアプリ キラモンアドベンチャー」は、トレーニングをゲーム化して、患者さんが自分から続けたくなる仕組みをうたっています。',link:{t:'MFTアプリ「キラモンアドベンチャー」',u:'https://pr-contents.doctorbook.jp/mft_kiramon_adventure'},opts:[
     {t:'導入して、MFTに来る患者さんに案内する（月額の仮設定 約1万円）',s:'費用はかかりますが、継続率が上がり、衛生士の負担も軽くなる見込みです。',fx:function(){S.other=Math.round((S.other+1)*10)/10;apply({funds:-3,rec:3,staff:3,rep:1});return 'キラモンアドベンチャーを導入し、MFTに通う子どもたちに案内しました。家でも続けてくれる子が増え、衛生士の説明の手間も減りそうです。'}},
     {t:'まず1〜2人の患者さんで試す',s:'小さく始めて、効果を確かめます。',fx:function(){apply({rec:1,staff:2});return '数人の患者さんで試しました。保護者から「子どもが自分から練習する」と声が上がりました。本格導入は、様子を見て決めます。'}},
@@ -1194,7 +1239,7 @@ function viewSettle(){
   var ev=S.mlog.length?'<h3>今月のできごと</h3><ul class="rev">'+S.mlog.map(function(x){return '<li class="mid">'+esc(x)+'</li>'}).join('')+'</ul>':'';
   var bl='<h3>ひとこと振り返り</h3><ul class="rev">'+reviewBullets(t).map(function(x){return '<li class="ok">'+esc(x)+'</li>'}).join('')+'</ul>';
   var ai=S.rvText[S.m]?'<div class="brief"><strong>Claudeからのコメント</strong><br>'+esc(S.rvText[S.m])+'</div>':(SAMPLE?'<div class="row"><button class="btn ghost" data-act="aireview"'+(S.rvBusy?' disabled':'')+'>'+(S.rvBusy?'書いています…':'Claudeに振り返りコメントをもらう')+'</button></div>':'');
-  return '<div class="card"><p class="eyebrow">'+S.m+'か月目 / 3 · 月末の振り返り</p><h2>'+S.m+'か月目が終わりました</h2>'+tbl+warn+'<div class="brief"><strong>今月の変化（月初からの累計）</strong><br>'+chips(S.d)+'</div>'+treatHtml(t)+fbHtml()+fbTrend()+ev+bl+ai+academyHtml()+cardHtml()+'<div class="row" style="margin-top:18px"><button class="btn" data-act="monthnext">'+(S.m<3?'翌月へ進む':'診断カードを見る')+'</button></div></div>';
+  return '<div class="card"><p class="eyebrow">'+S.m+'か月目 / 3 · 月末の振り返り</p><h2>'+S.m+'か月目が終わりました</h2>'+tbl+warn+'<div class="brief"><strong>今月の変化（月初からの累計）</strong><br>'+chips(S.d)+'</div>'+treatHtml(t)+fbHtml()+fbTrend()+ev+bl+ai+academyHtml(true)+cardHtml()+'<div class="row" style="margin-top:18px"><button class="btn" data-act="monthnext">'+(S.m<3?'翌月へ進む':'診断カードを見る')+'</button></div></div>';
 }
 function viewClaimIntro(){
   var sc=curScn();
@@ -1718,7 +1763,7 @@ function rollProfile(){
   S.matRate=(form.id==='ma')?0.08:0.12; S.mgmtRate=(form.id==='ma')?0.10:0;
   S.debt=debt; S.debt0=debt; S.princ=Math.round(debt/120); S.ds=ds; S.ret=form.ret;
   S.quota=(form.id==='ma')?Math.round(base*1.05):0;
-  S.trk={pos:0,neg:0,inv:0}; S.learned=[]; S.vseen=[]; S.mseen=[]; S.tseen=[]; S.fbHist=[]; S.mood=null; S.fb=null; S.fbAi=null; S.d={}; S.log=[]; S.res=[]; S.ng=0; S.m=1; S.feed=[]; S.day=0; S.today=null; S.speed=1; S.paused=false; S.sched=[]; S.mlog=[]; S.dayEv={}; S.treats={}; S.rvText={}; S.cardUrl=null; S.code='CLN-2026-'+rnd(100,999);
+  S.trk={pos:0,neg:0,inv:0}; S.learned=[]; S.vseen=[]; S.mseen=[]; S.tseen=[]; S.bizC={}; S.fbHist=[]; S.mood=null; S.fb=null; S.fbAi=null; S.d={}; S.log=[]; S.res=[]; S.ng=0; S.m=1; S.feed=[]; S.day=0; S.today=null; S.speed=1; S.paused=false; S.sched=[]; S.mlog=[]; S.dayEv={}; S.treats={}; S.rvText={}; S.cardUrl=null; S.code='CLN-2026-'+rnd(100,999);
 }
 function decOpts(){
   if(S.m!==1) return DEC[S.m-1];
@@ -1790,9 +1835,9 @@ function viewIntro(){
   var locs=LOCS.map(function(l){return [l.n,Math.round(l.w/lt*100)]});
   var ok=(SAMPLE&&CSV.length>=3);
   return '<div class="hero"><div class="herol">'+
-   '<p class="vmono">v0.8 beta · 無料の歯科経営シミュレーション · 実際の統計にもとづく</p>'+
+   '<p class="vmono">v0.9 beta · 歯科医院の経営判断を体験する · 実際の統計にもとづく</p>'+
    '<h2 class="bignum">1,363<br>分の<em>1</em></h2>'+
-   '<p class="herop">2024年の1年間に、全国で開設された歯科診療所は1,363件。そのうちの1件の院長になって、3か月の経営を最後まで生きてみます。開院の形も、貯金も、立地も、選べません。毎日なにかが起き、ときどき、患者さんのクレームが来ます。</p>'+
+   '<p class="herop">2024年の1年間に、全国で開設された歯科診療所は1,363件。そのうちの1件の院長になって、3か月の経営を最後まで生きてみます。開院の形も、貯金も、立地も、選べません。資金、人、集患、院長の体力。毎日なにかが起き、そのたびに経営の判断を迫られ、ときどき、患者さんのクレームが来ます。最後に、経営の4つの軸で診断します。</p>'+
    '<div class="hstats"><div><b>3か月</b><span>の開院を最後まで</span></div><div><b>1日＝1秒</b><span>で流れる90日間</span></div></div>'+
    '<div class="hstart"><button class="btn" data-act="start" data-mode="'+(ok?'csv':'sample')+'">開院する</button></div>'+
    (ok?'<p class="note">月に1回、患者さんのクレームが来ます。3人の患者さん（性格タイプはばらばら）と会話します。</p>':'<p class="note">この環境ではClaudeを呼び出せないため、簡易版（選択肢の3シナリオ）で始まります。</p>')+
