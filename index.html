@@ -178,6 +178,7 @@ textarea.ft{width:100%;font:inherit;font-size:14px;padding:10px 12px;border:1px 
 .rvs li small{display:block;color:var(--ink2);font-size:12px}
 .rvs li.mine{border-color:var(--accent)}
 .idhead{display:flex;gap:12px;align-items:center;margin:10px 0}.portrait{width:76px;height:76px;flex:none;border-radius:50%;overflow:hidden;border:2px solid var(--line,#ddd)}.portrait svg{width:100%;height:100%;display:block}.idtxt .clinic{font-size:17px;font-weight:700}.idtxt .dname{font-size:14px;margin-top:2px}.idtxt .dname small{opacity:.7}.idtxt .addr{font-size:12px;opacity:.7;margin-top:2px}.ext svg{width:100%;max-width:460px;height:auto;display:block;margin:0 auto;border-radius:12px}.story{margin:4px 0 8px}.badge.off{opacity:.45;text-decoration:line-through}details.free-d{margin-top:10px}details.free-d summary{cursor:pointer;font-size:13px;opacity:.8}
+.opt.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
 .badges{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 12px}
 .badge{font-size:13px;font-weight:700;padding:2px 12px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
 .badge.alt{background:var(--warn-soft);color:var(--warn)}
@@ -675,7 +676,7 @@ function evSick(p){
    {t:'院長が代わりに入る',s:'診療は回りますが、院長の疲れがたまります。',fx:function(){p.st='休職';p.back=S.day+5;S.tmpPen+=cap*0.3;apply({staff:2,fat:9});return '院長が代わりに入って、今月はなんとか乗り切りました。ただ、かなり疲れがたまっています。'}}]};
 }
 function evEq(item){
-  var d=EQC[item.k];
+  var d0=EQC[item.k],rmul=item.rm||1,d={};for(var kk in d0)d[kk]=d0[kk];d.rep=Math.round(d0.rep*rmul);
   var syms={ct:'撮影中にエラーが出て、止まってしまいました。',ios:'スキャン中に画面が固まり、起動しなくなりました。',mic:'ライトがつかなくなり、焦点が合わなくなりました。',pano:'撮影のたびにエラーが出るようになりました。',chair:'診療台の1台が動かなくなり、予約が回らなくなりました。',ster:'滅菌の途中でエラーが出て、止まってしまいました。器具が回らなくなります。'};
   var dn=d.n.replace(/（.*）/,''); return {kind:'機器',title:(item.k==='chair'?'チェアユニット1台':dn)+'が壊れました',body:dn+'：'+syms[item.k],opts:[
    {t:'修理する（'+d.rep+'万円）',s:'今月は一部の診療を止めますが、機器は残ります。',fx:function(){item.st='稼働中（修理済）';S.tmpPen+=d.cap*0.8;apply({funds:-d.rep,fat:1});return d.n+'を修理に出しました。今月は診療枠を絞りましたが、来月から使えます。'}},
@@ -713,13 +714,13 @@ function viewEvent(){
 function stCls(s){return (s.indexOf('稼働中')===0||s==='在籍')?'ok':((s==='産休'||s==='休職'||s==='採用中')?'wn':'bd')}
 function renderRoster(){
   var el=$('#roster'); if(!el) return;
-  if(!S.roster||S.phase==='intro'||S.phase==='profile'||S.phase==='roll'){el.innerHTML='';return}
+  if(!S.roster||S.phase==='intro'||S.phase==='profile'||S.phase==='roll'||S.phase==='gear'){el.innerHTML='';return}
   var h='<h3>スタッフ</h3><ul class="ros">'+S.roster.map(function(r){return '<li><span class="dot role'+(['院長','勤務医','歯科衛生士','歯科助手'].indexOf(r.role))+'"></span><span>'+esc(r.n)+'<small>'+r.role+'</small></span><span class="st '+stCls(r.st)+'">'+r.st+(r.note?'・'+esc(r.note):'')+'</span></li>'}).join('')+'</ul>';
-  h+='<h3>機器</h3><ul class="ros">'+S.eqs.map(function(q){return '<li><span class="dot eq"></span><span>'+esc(EQC[q.k].n)+'</span><span class="st '+stCls(q.st)+'">'+q.st+'</span></li>'}).join('')+'</ul>';
+  h+='<h3>機器</h3><ul class="ros">'+S.eqs.map(function(q){return '<li><span class="dot eq"></span><span>'+esc(EQC[q.k].n)+(q.b?'（'+esc(q.b)+'）':'')+'</span><span class="st '+stCls(q.st)+'">'+q.st+'</span></li>'}).join('')+'</ul>';
   el.innerHTML=h;
 }
 function renderSide(){
-  var pre=(S.phase==='intro'||S.phase==='profile'||S.phase==='roll');
+  var pre=(S.phase==='intro'||S.phase==='profile'||S.phase==='roll'||S.phase==='gear');
   var lay=$('#layout'); if(lay) lay.className='layout'+(pre?' pre':'');
   var ic=$('#idcard'), mp=$('#mapbox');
   if(pre||!S.prof){ if(ic) ic.innerHTML=''; if(mp) mp.innerHTML=''; return }
@@ -892,7 +893,7 @@ function genHR(){
 }
 function genEq(){
   var okEq=S.eqs.filter(function(x){return x.st.indexOf('稼働中')===0});
-  return okEq.length?evEq(pickW(okEq,function(x){return EQC[x.k].w})):null;
+  return okEq.length?evEq(pickW(okEq,function(x){return EQC[x.k].w*(1+(0.9-(x.rel||0.85))*5)})):null;
 }
 function talk(p,line,opts,title){return {kind:'スタッフとの会話',talk:true,who:p,title:title||(p.n+'さんから声をかけられました'),body:line,opts:opts}}
 /* ---------- 追加の出来事（院内・経営・患者まわり）。効果の数字はゲーム内の仮設定です ---------- */
@@ -1765,6 +1766,109 @@ function rollProfile(){
   S.quota=(form.id==='ma')?Math.round(base*1.05):0;
   S.trk={pos:0,neg:0,inv:0}; S.learned=[]; S.vseen=[]; S.mseen=[]; S.tseen=[]; S.bizC={}; S.fbHist=[]; S.mood=null; S.fb=null; S.fbAi=null; S.d={}; S.log=[]; S.res=[]; S.ng=0; S.m=1; S.feed=[]; S.day=0; S.today=null; S.speed=1; S.paused=false; S.sched=[]; S.mlog=[]; S.dayEv={}; S.treats={}; S.rvText={}; S.cardUrl=null; S.code='CLN-2026-'+rnd(100,999);
 }
+
+/* ---------- 設備をブランドで選ぶ（価格・特徴はゲーム内の仮設定。実際の見積もりとは一致しません） ---------- */
+/* p=本体価格(万円)、rep=開院時の評判への影響、u=診療単価への影響(万円)、up=月の保守費への影響(万円)、rel=故障しにくさ(0〜1)、rm=修理費の倍率 */
+var GB={
+ chair:{n:'診療チェア（ユニット）',unitName:'台',opts:[
+  {id:'value',n:'普及・輸入機',p:200,rep:0,u:-0.01,up:-0.1,rel:0.80,rm:0.9,note:'初期費用をおさえられます。故障時の部品手配には、やや不安があります。'},
+  {id:'yoshida',n:'ヨシダ',p:280,rep:0,u:0,up:0,rel:0.90,rm:1.0,note:'国産で、標準的な価格帯です。全国に販売店があります。'},
+  {id:'belmont',n:'タカラベルモント',p:350,rep:1,u:0.01,up:0.1,rel:0.92,rm:1.0,note:'国産で、デザインと診療姿勢のとりやすさが特徴です。'},
+  {id:'morita',n:'モリタ',p:400,rep:1,u:0.01,up:0.15,rel:0.95,rm:1.0,note:'国産で、耐久性とサポートの厚さが特徴です。'},
+  {id:'premium',n:'海外高級機（Planmeca・KaVoなど）',p:500,rep:3,u:0.02,up:0.4,rel:0.88,rm:1.4,note:'見た目の印象は強い一方、部品や修理が高くなりやすい面があります。'}]},
+ pano:{n:'パノラマ装置',unitName:'',opts:[
+  {id:'value',n:'国産の普及機',p:300,rep:0,u:0,up:0,rel:0.88,rm:0.9,note:'基本の撮影ができます。価格はおさえめです。'},
+  {id:'morita',n:'モリタ',p:450,rep:1,u:0,up:0.1,rel:0.95,rm:1.0,note:'画質とサポートを重視した選択です。'},
+  {id:'planmeca',n:'Planmeca',p:550,rep:2,u:0.01,up:0.2,rel:0.90,rm:1.3,note:'輸入の上位機です。印象は強いですが、修理費は高めです。'}]},
+ ct:{n:'歯科用CT',unitName:'',opts:[
+  {id:'value',n:'普及機（輸入）',p:800,rep:0,u:-0.01,up:-0.3,rel:0.80,rm:0.9,note:'導入費をおさえられます。画質や保守に少し不安があります。'},
+  {id:'asahi',n:'朝日レントゲン工業',p:950,rep:1,u:0,up:0,rel:0.90,rm:1.0,note:'国産で、標準的な価格帯です。'},
+  {id:'carestream',n:'Carestream Dental',p:1000,rep:1,u:0.005,up:0.1,rel:0.88,rm:1.1,note:'輸入機で、幅広いモデルがあります。'},
+  {id:'morita',n:'モリタ',p:1200,rep:2,u:0.01,up:0.2,rel:0.95,rm:1.0,note:'国産で、画質とサポートの厚さを重視した選択です。'},
+  {id:'sirona',n:'Dentsply Sirona',p:1600,rep:3,u:0.015,up:0.4,rel:0.90,rm:1.3,note:'デジタル機器との連携を重視した上位機です。維持費は高めです。'}]},
+ ios:{n:'口腔内スキャナー',unitName:'',opts:[
+  {id:'medit',n:'Medit',p:350,rep:0,u:0,up:0,rel:0.85,rm:1.0,note:'比較的、導入しやすい価格帯です。'},
+  {id:'trios',n:'3Shape TRIOS',p:600,rep:1,u:0.01,up:0.3,rel:0.90,rm:1.1,note:'スキャン精度と連携の広さが特徴です。'},
+  {id:'itero',n:'iTero（Align）',p:550,rep:2,u:0.01,up:0.4,rel:0.90,rm:1.1,note:'矯正の説明に強く、患者さんにも見せやすいのが特徴です。'},
+  {id:'primescan',n:'Dentsply Sirona Primescan',p:750,rep:2,u:0.015,up:0.4,rel:0.90,rm:1.2,note:'院内でのセラミック作製との連携を重視した上位機です。'}]},
+ mic:{n:'マイクロスコープ',unitName:'',opts:[
+  {id:'value',n:'普及機',p:250,rep:0,u:-0.005,up:-0.1,rel:0.82,rm:0.9,note:'導入費をおさえられます。光学性能は控えめです。'},
+  {id:'global',n:'Global Surgical',p:400,rep:1,u:0,up:0,rel:0.88,rm:1.0,note:'標準的な価格帯の選択です。'},
+  {id:'leica',n:'Leica',p:600,rep:2,u:0.01,up:0.2,rel:0.92,rm:1.2,note:'光学性能が高く、精密な治療向けです。'},
+  {id:'zeiss',n:'Carl Zeiss',p:800,rep:3,u:0.015,up:0.3,rel:0.95,rm:1.3,note:'光学性能が高く、長く使える上位機です。維持費は高めです。'}]}
+};
+var GORD=['chair','pano','ct','ios','mic'];
+var GSTD={chair:'yoshida',pano:'value',ct:'asahi',ios:'medit',mic:'global'}; /* 標準ブランド（抽選時の費用の見積もりに近いもの） */
+var GBASE={chair:300,pano:400,ct:1000,ios:400,mic:350}; /* 抽選時に見込んでいる単価（万円）。新規開業の費用に含まれています */
+function gOpt(c,id){var o=GB[c].opts;for(var i=0;i<o.length;i++)if(o[i].id===id)return o[i];return null}
+function gQty(c){return c==='chair'?S.prof.team.chairs:1}
+function gearInit(){
+ var P=S.prof,e=P.eq,isNew=(P.form.id==='new');
+ var sel={chair:isNew?'yoshida':'keep',pano:e.pano?(isNew?'value':'keep'):'none',ct:e.ct?(isNew?'asahi':'keep'):'none',ios:e.ios?(isNew?'medit':'keep'):'none',mic:e.mic?(isNew?'global':'keep'):'none'};
+ S.gear={isNew:isNew,sel:sel,pay:{chair:'cash',pano:'cash',ct:'cash',ios:'cash',mic:'cash'},funds0:S.funds};
+}
+function gearCalc(){
+ var g=S.gear,P=S.prof,r={cash:0,lease:0,lm:0,rep:0,unit:0,up:0,tot:0,items:[]};
+ GORD.forEach(function(c){
+  var id=g.sel[c];if(id==='none')return;
+  var q=gQty(c),own=P.eq[c]!==false&&(c==='chair'||P.eq[c]);
+  if(id==='keep'){r.items.push({c:c,b:'既存',keep:true,rel:0.85,rm:1.0});r.unit+=(c==='ct'?0.04:c==='ios'?0.02:c==='mic'?0.03:0);r.up+=(c==='ct'?2:c==='ios'?1:c==='mic'?1:0);return}
+  var o=gOpt(c,id),pr=o.p*q;
+  r.items.push({c:c,b:o.n,rel:o.rel,rm:o.rm});
+  r.tot+=pr;r.rep+=o.rep;r.unit+=o.u+(c==='ct'?0.04:c==='ios'?0.02:c==='mic'?0.03:0);r.up+=o.up*(c==='chair'?q:1)+(c==='ct'?2:c==='ios'?1:c==='mic'?1:0);
+  if(g.isNew){r.cash+=pr-GBASE[c]*q*(P.eq[c]===undefined||P.eq[c]?1:0)}
+  else if(g.pay[c]==='lease'){r.cash+=Math.round(pr*0.2);r.lm+=pr/60;r.lease+=pr}
+  else r.cash+=pr;
+ });
+ if(g.isNew){ /* 新規開業は、抽選で見込んだ標準の費用との差額だけを、手元の資金で調整する。なしにしたものは、見込み費用が浮く */
+  GORD.forEach(function(c){var had=(c==='chair')||P.eq[c];if(had&&g.sel[c]==='none')r.cash-=GBASE[c]*gQty(c)});
+ }
+ r.cash=Math.round(r.cash);r.lm=Math.round(r.lm*10)/10;r.up=Math.round(r.up*10)/10;r.unit=Math.round(r.unit*1000)/1000;
+ return r;
+}
+function viewGear(){
+ if(!S.gear)gearInit();
+ var g=S.gear,c=gearCalc(),P=S.prof,left=S.funds0-c.cash;
+ var h='<div class="card"><p class="eyebrow">設備をえらぶ</p><h2 style="margin:4px 0 8px">チェアと機器を、ブランドで決めます</h2><p>'+(g.isNew?'新規開業なので、チェアも機器も、すべて新しく選べます。抽選で見込んでいた標準の費用との差額が、手元の資金に反映されます。':'これまでの設備は引き継ぎます。入れ替えや追加をする場合は、その費用を支払います。リースも選べます。')+'</p><p class="note">ブランドの特徴と価格は、一般的な印象と相場にもとづくゲーム内の仮設定で、実際の見積もりとは一致しません。</p></div>';
+ GORD.forEach(function(k){
+  var cat=GB[k],q=gQty(k),opts=[];
+  var can=(k==='chair')?false:true;
+  var items=[];
+  if(!g.isNew&&(k==='chair'||P.eq[k]))items.push({id:'keep',n:'既存のまま使う',p:0,txt:'費用はかかりません。'});
+  if(k!=='chair'&&!(!g.isNew&&P.eq[k]))items.push({id:'none',n:g.isNew&&P.eq[k]?'導入しない':'なし',p:0,txt:g.isNew&&P.eq[k]?'見込んでいた費用が浮きます。ただし、その機器を使う診療はできません。':'導入しません。'});
+  cat.opts.forEach(function(o){items.push({id:o.id,n:o.n,p:o.p*q,o:o})});
+  h+='<div class="card"><h3>'+cat.n+(k==='chair'?'（'+q+'台）':'')+'</h3><div style="display:grid;gap:8px;margin-top:8px">'+items.map(function(it){
+   var on=(g.sel[k]===it.id),o=it.o;
+   var tags=o?'<div class="badges" style="margin:4px 0 0"><span class="badge">'+fmoney(it.p)+'万円'+(q>1?'（'+o.p+'万円×'+q+'）':'')+'</span>'+(o.rep?'<span class="badge">評判 +'+o.rep+'</span>':'')+(o.u>0?'<span class="badge">単価 +'+o.u+'万円</span>':'')+(o.u<0?'<span class="badge alt">単価 '+o.u+'万円</span>':'')+'<span class="badge'+(o.rel<0.85?' alt':'')+'">故障しにくさ '+'★★★★★'.slice(0,Math.round(o.rel*5))+'</span>'+(o.up>0?'<span class="badge alt">保守 月+'+Math.round(o.up*(k==='chair'?q:1)*10)/10+'万円</span>':'')+'</div>':'';
+   return '<button class="opt'+(on?' sel':'')+'" data-act="gpick" data-c="'+k+'" data-id="'+it.id+'"'+(on?' aria-pressed="true"':' aria-pressed="false"')+'><b>'+esc(it.n)+'</b><span class="note">'+esc(o?o.note:it.txt)+'</span>'+tags+'</button>';
+  }).join('')+'</div>'+((!g.isNew&&g.sel[k]!=='keep'&&g.sel[k]!=='none')?'<div class="row" style="margin-top:8px"><button class="btn ghost" data-act="gpay" data-c="'+k+'">支払い：'+(g.pay[k]==='lease'?'リース（頭金20%＋月60回）':'一括払い')+'（切り替え）</button></div>':'')+'</div>';
+ });
+ var short=left<30;
+ h+='<div class="card"><h3>ここまでの合計</h3><table class="calc"><tr><td>選んだ設備の合計</td><td>'+fmoney(Math.round(c.tot))+'万円</td></tr>'+
+  '<tr><td>'+(g.isNew?'標準の見込みとの差額（手元の資金から）':'今、手元の資金から払う分')+'</td><td>'+(c.cash>0?'−':'+')+fmoney(Math.abs(c.cash))+'万円</td></tr>'+
+  '<tr><td>手元の資金（開院時）</td><td class="'+(short?'down':'')+'">'+fmoney(S.funds0)+' → '+fmoney(left)+'万円</td></tr>'+
+  (c.lm?'<tr><td>リースの月額</td><td>+'+c.lm+'万円/月</td></tr>':'')+
+  '<tr><td>評判への影響</td><td>'+(c.rep>=0?'+':'')+c.rep+'</td></tr></table>'+
+  (short?'<p class="note" style="color:var(--bad,#b5412e)">手元の資金が足りません。ブランドを見直すか、リースを使ってください。</p>':'')+
+  '<div class="row"><button class="btn" data-act="gearok"'+(short?' disabled':'')+'>この設備で開院する</button><button class="btn ghost" data-act="gearback">条件に戻る</button></div></div>';
+ return h;
+}
+function gearApply(){
+ var g=S.gear,c=gearCalc(),P=S.prof;
+ var unit0=S.unit-P.eq.unit,other0=S.other-P.eq.upkeep;
+ S.funds=Math.max(0,S.funds-c.cash);S.funds0=S.funds;P.funds=S.funds;
+ S.unit=Math.round((unit0+c.unit)*100)/100;
+ S.other=Math.round((other0+c.up+c.lm)*10)/10;
+ S.rep=Math.max(0,Math.min(100,S.rep+c.rep));
+ var ne={ct:g.sel.ct!=='none',pano:g.sel.pano!=='none',ios:g.sel.ios!=='none',mic:g.sel.mic!=='none'};
+ ne.unit=P.eq.unit;ne.upkeep=P.eq.upkeep;P.eq=ne;
+ P.gear={items:c.items,sel:g.sel,pay:g.pay,tot:Math.round(c.tot)};
+ S.gearItems=c.items;
+}
+function gearTag(){
+ var st={}; (S.gearItems||[]).forEach(function(i){st[i.c]=i});
+ (S.eqs||[]).forEach(function(q){var i=st[q.k];if(i){q.b=i.keep?'':i.b;q.rel=i.rel;q.rm=i.rm}});
+}
 function decOpts(){
   if(S.m!==1) return DEC[S.m-1];
   return [DEC1[S.prof.form.id]].concat(DEC1G);
@@ -1796,7 +1900,7 @@ function viewProfile(){
   '<h3>家賃と人件費の目安</h3>'+basisHtml(p)+
 
   '<div class="brief"><dl><dt>患者さん</dt><dd>再診 '+S.recur+'人 ＋ 新患 '+S.newp+'人/月</dd><dt>Googleレビュー</dt><dd>★'+avg().toFixed(1)+'（'+S.rn+'件）</dd><dt>スタッフ満足度</dt><dd>'+S.staff+'</dd><dt>院長の消耗度</dt><dd>'+S.fat+'</dd>'+(S.quota?'<dt>本部の目標</dt><dd>新患 '+S.quota+'人/月</dd>':'')+'</dl></div>'+
-  '<div class="row"><button class="btn" data-act="begin">この条件で開院する</button><button class="btn ghost" data-act="reroll">引き直す</button></div>'+
+  '<div class="row"><button class="btn" data-act="'+(f.id==='ma'?'begin':'gear')+'">'+(f.id==='ma'?'この条件で開院する':'設備を選ぶ')+'</button><button class="btn ghost" data-act="reroll">引き直す</button></div>'+
   '<div class="row"><button class="btn ghost" data-act="procard">この条件を画像にする</button></div>'+profCardHtml()+
   '<details class="refs"><summary>参考にした実際の状況</summary><ul>'+REFS.map(function(r){return '<li>'+esc(r[0])+'（<a href="'+r[2]+'" target="_blank" rel="noopener">'+esc(r[1])+'</a>）</li>'}).join('')+'</ul><p>数字の一部は目安や古い統計です。ゲームの条件は、これを参考にした設定で、実在の医院を表すものではありません。</p></details></div>';
   return h;
@@ -1981,6 +2085,7 @@ function render(){
   if(S.phase==='intro') v=viewIntro();
   else if(S.phase==='roll') v=viewRoll();
   else if(S.phase==='profile') v=viewProfile();
+  else if(S.phase==='gear') v=viewGear();
   else if(S.phase==='run') v=viewRun();
   else if(S.phase==='settle') v=viewSettle();
   else if(S.phase==='claimintro') v=viewClaimIntro();
@@ -2011,7 +2116,12 @@ document.addEventListener('click',function(ev){
   else if(a==='procard'){buildProfCard(); render(); return}
   else if(a==='reroll'){S.proUrl=undefined; S.rollUrl=undefined; rollProfile(); S.phase='roll'; render(); startRoulette(); return}
   else if(a==='rollskip'){if(RIV){clearInterval(RIV);RIV=null} S.phase='profile'}
-  else if(a==='begin'){buildRoster();S.day=0;S.m=1;newMonth()}
+  else if(a==='gear'){S.gear=null;gearInit();S.phase='gear'}
+  else if(a==='gpick'){S.gear.sel[b.getAttribute('data-c')]=b.getAttribute('data-id')}
+  else if(a==='gpay'){var gc=b.getAttribute('data-c');S.gear.pay[gc]=S.gear.pay[gc]==='lease'?'cash':'lease'}
+  else if(a==='gearback'){S.phase='profile'}
+  else if(a==='gearok'){gearApply();buildRoster();gearTag();S.day=0;S.m=1;newMonth()}
+  else if(a==='begin'){S.gearItems=null;buildRoster();S.day=0;S.m=1;newMonth()}
   else if(a==='pause'){S.paused=!S.paused; if(!S.paused) resumeClock()}
   else if(a==='speed'){S.speed=Number(b.getAttribute('data-v'))||1; S.paused=false; resumeClock()}
   else if(a==='evpick'){var ev0=S.ev; if(ev0&&ev0.done==null){var ii=Number(b.getAttribute('data-i')); var d0={},o0=S.other,k0; for(k0 in S.d) d0[k0]=S.d[k0]; ev0.res=ev0.opts[ii].fx(); ev0.done=ii; ev0.dd={}; for(k0 in S.d){var dv=S.d[k0]-(d0[k0]||0); if(dv) ev0.dd[k0]=dv} ev0.dother=Math.round((S.other-o0)*10)/10; S.evsum=ev0.title+'（'+ev0.opts[ii].t+'）'; S.mlog.push(ev0.kind+'：'+ev0.title+' → '+ev0.opts[ii].t)}}
